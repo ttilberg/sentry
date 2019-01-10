@@ -92,13 +92,13 @@ exports[`BookmarkStar renders 1`] = `
       src="icon-star-small-filled"
     >
       <InlineSvg
-        className="css-fl9x15-Star e5ekdrk0"
+        className="css-fl9x15-Star euuv3ia0"
         isBookmarked={false}
         onClick={[Function]}
         src="icon-star-small-filled"
       >
         <StyledSvg
-          className="css-fl9x15-Star e5ekdrk0"
+          className="css-fl9x15-Star euuv3ia0"
           height="1em"
           isBookmarked={false}
           onClick={[Function]}
@@ -106,7 +106,7 @@ exports[`BookmarkStar renders 1`] = `
           width="1em"
         >
           <svg
-            className="e5ekdrk0 css-1b9wx8m-StyledSvg-Star e2idor0"
+            className="euuv3ia0 css-1b9wx8m-StyledSvg-Star ebb48o80"
             height="1em"
             onClick={[Function]}
             viewBox={Object {}}

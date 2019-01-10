@@ -115,6 +115,7 @@ exports[`AvatarList renders with collapsed avatar count if > 5 users 1`] = `
           position="top"
           title="1 other users"
         >
+<<<<<<< HEAD
           <Manager>
             <Reference>
               <InnerReference
@@ -128,6 +129,21 @@ exports[`AvatarList renders with collapsed avatar count if > 5 users 1`] = `
                   onFocus={[Function]}
                   onMouseEnter={[Function]}
                   onMouseLeave={[Function]}
+=======
+          <CollapsedUsers
+            className="tip"
+            size={28}
+            title="1 other users"
+          >
+            <div
+              className="tip css-17ychq3-CollapsedUsers-Circle e1w1ixlz1"
+              size={28}
+              title="1 other users"
+            >
+              <Plus>
+                <span
+                  className="css-sduhlv-Plus e1w1ixlz2"
+>>>>>>> build(travis): yarn --pnp [WIP]
                 >
                   <span
                     aria-describedby="tooltip-123456"
@@ -187,7 +203,7 @@ exports[`AvatarList renders with collapsed avatar count if > 5 users 1`] = `
           }
         >
           <Avatar
-            className="css-ptswrs-StyledAvatar-Circle e1axh4r50"
+            className="css-ptswrs-StyledAvatar-Circle e1w1ixlz0"
             hasTooltip={true}
             size={28}
             tooltipOptions={
@@ -213,7 +229,7 @@ exports[`AvatarList renders with collapsed avatar count if > 5 users 1`] = `
             }
           >
             <UserAvatar
-              className="css-ptswrs-StyledAvatar-Circle e1axh4r50"
+              className="css-ptswrs-StyledAvatar-Circle e1w1ixlz0"
               gravatar={false}
               hasTooltip={true}
               size={28}
@@ -240,7 +256,7 @@ exports[`AvatarList renders with collapsed avatar count if > 5 users 1`] = `
               }
             >
               <BaseAvatar
-                className="css-ptswrs-StyledAvatar-Circle e1axh4r50"
+                className="css-ptswrs-StyledAvatar-Circle e1w1ixlz0"
                 gravatarId="foo@example.com"
                 hasTooltip={true}
                 letterId="foo@example.com"
@@ -263,10 +279,39 @@ exports[`AvatarList renders with collapsed avatar count if > 5 users 1`] = `
                   position="top"
                   title="Foo Bar (foo@example.com)"
                 >
+<<<<<<< HEAD
                   <Manager>
                     <Reference>
                       <InnerReference
                         setReferenceNode={[Function]}
+=======
+                  <StyledBaseAvatar
+                    className="tip avatar css-ptswrs-StyledAvatar-Circle e1w1ixlz0"
+                    loaded={true}
+                    round={true}
+                    style={
+                      Object {
+                        "height": "28px",
+                        "width": "28px",
+                      }
+                    }
+                    title="Foo Bar (foo@example.com)"
+                  >
+                    <span
+                      className="tip avatar e1w1ixlz0 css-p25dkn-StyledBaseAvatar-StyledAvatar-Circle e1b7pbn80"
+                      style={
+                        Object {
+                          "height": "28px",
+                          "width": "28px",
+                        }
+                      }
+                      title="Foo Bar (foo@example.com)"
+                    >
+                      <LetterAvatar
+                        displayName="Foo Bar"
+                        identifier="foo@example.com"
+                        round={true}
+>>>>>>> build(travis): yarn --pnp [WIP]
                       >
                         <Container
                           aria-describedby="tooltip-123456"
@@ -277,6 +322,7 @@ exports[`AvatarList renders with collapsed avatar count if > 5 users 1`] = `
                           onMouseEnter={[Function]}
                           onMouseLeave={[Function]}
                         >
+<<<<<<< HEAD
                           <span
                             aria-describedby="tooltip-123456"
                             className="css-1m3e0hg-Container erna86q0"
@@ -284,6 +330,11 @@ exports[`AvatarList renders with collapsed avatar count if > 5 users 1`] = `
                             onFocus={[Function]}
                             onMouseEnter={[Function]}
                             onMouseLeave={[Function]}
+=======
+                          <svg
+                            className="css-1r4mnb9-Svg e1lngh5w0"
+                            viewBox="0 0 120 120"
+>>>>>>> build(travis): yarn --pnp [WIP]
                           >
                             <StyledBaseAvatar
                               className="avatar css-ptswrs-StyledAvatar-Circle e1axh4r50"
@@ -383,7 +434,7 @@ exports[`AvatarList renders with collapsed avatar count if > 5 users 1`] = `
           }
         >
           <Avatar
-            className="css-ptswrs-StyledAvatar-Circle e1axh4r50"
+            className="css-ptswrs-StyledAvatar-Circle e1w1ixlz0"
             hasTooltip={true}
             size={28}
             tooltipOptions={
@@ -409,7 +460,7 @@ exports[`AvatarList renders with collapsed avatar count if > 5 users 1`] = `
             }
           >
             <UserAvatar
-              className="css-ptswrs-StyledAvatar-Circle e1axh4r50"
+              className="css-ptswrs-StyledAvatar-Circle e1w1ixlz0"
               gravatar={false}
               hasTooltip={true}
               size={28}
@@ -436,7 +487,7 @@ exports[`AvatarList renders with collapsed avatar count if > 5 users 1`] = `
               }
             >
               <BaseAvatar
-                className="css-ptswrs-StyledAvatar-Circle e1axh4r50"
+                className="css-ptswrs-StyledAvatar-Circle e1w1ixlz0"
                 gravatarId="foo@example.com"
                 hasTooltip={true}
                 letterId="foo@example.com"
@@ -459,10 +510,39 @@ exports[`AvatarList renders with collapsed avatar count if > 5 users 1`] = `
                   position="top"
                   title="Foo Bar (foo@example.com)"
                 >
+<<<<<<< HEAD
                   <Manager>
                     <Reference>
                       <InnerReference
                         setReferenceNode={[Function]}
+=======
+                  <StyledBaseAvatar
+                    className="tip avatar css-ptswrs-StyledAvatar-Circle e1w1ixlz0"
+                    loaded={true}
+                    round={true}
+                    style={
+                      Object {
+                        "height": "28px",
+                        "width": "28px",
+                      }
+                    }
+                    title="Foo Bar (foo@example.com)"
+                  >
+                    <span
+                      className="tip avatar e1w1ixlz0 css-p25dkn-StyledBaseAvatar-StyledAvatar-Circle e1b7pbn80"
+                      style={
+                        Object {
+                          "height": "28px",
+                          "width": "28px",
+                        }
+                      }
+                      title="Foo Bar (foo@example.com)"
+                    >
+                      <LetterAvatar
+                        displayName="Foo Bar"
+                        identifier="foo@example.com"
+                        round={true}
+>>>>>>> build(travis): yarn --pnp [WIP]
                       >
                         <Container
                           aria-describedby="tooltip-123456"
@@ -473,6 +553,7 @@ exports[`AvatarList renders with collapsed avatar count if > 5 users 1`] = `
                           onMouseEnter={[Function]}
                           onMouseLeave={[Function]}
                         >
+<<<<<<< HEAD
                           <span
                             aria-describedby="tooltip-123456"
                             className="css-1m3e0hg-Container erna86q0"
@@ -480,6 +561,11 @@ exports[`AvatarList renders with collapsed avatar count if > 5 users 1`] = `
                             onFocus={[Function]}
                             onMouseEnter={[Function]}
                             onMouseLeave={[Function]}
+=======
+                          <svg
+                            className="css-1r4mnb9-Svg e1lngh5w0"
+                            viewBox="0 0 120 120"
+>>>>>>> build(travis): yarn --pnp [WIP]
                           >
                             <StyledBaseAvatar
                               className="avatar css-ptswrs-StyledAvatar-Circle e1axh4r50"
@@ -579,7 +665,7 @@ exports[`AvatarList renders with collapsed avatar count if > 5 users 1`] = `
           }
         >
           <Avatar
-            className="css-ptswrs-StyledAvatar-Circle e1axh4r50"
+            className="css-ptswrs-StyledAvatar-Circle e1w1ixlz0"
             hasTooltip={true}
             size={28}
             tooltipOptions={
@@ -605,7 +691,7 @@ exports[`AvatarList renders with collapsed avatar count if > 5 users 1`] = `
             }
           >
             <UserAvatar
-              className="css-ptswrs-StyledAvatar-Circle e1axh4r50"
+              className="css-ptswrs-StyledAvatar-Circle e1w1ixlz0"
               gravatar={false}
               hasTooltip={true}
               size={28}
@@ -632,7 +718,7 @@ exports[`AvatarList renders with collapsed avatar count if > 5 users 1`] = `
               }
             >
               <BaseAvatar
-                className="css-ptswrs-StyledAvatar-Circle e1axh4r50"
+                className="css-ptswrs-StyledAvatar-Circle e1w1ixlz0"
                 gravatarId="foo@example.com"
                 hasTooltip={true}
                 letterId="foo@example.com"
@@ -655,10 +741,39 @@ exports[`AvatarList renders with collapsed avatar count if > 5 users 1`] = `
                   position="top"
                   title="Foo Bar (foo@example.com)"
                 >
+<<<<<<< HEAD
                   <Manager>
                     <Reference>
                       <InnerReference
                         setReferenceNode={[Function]}
+=======
+                  <StyledBaseAvatar
+                    className="tip avatar css-ptswrs-StyledAvatar-Circle e1w1ixlz0"
+                    loaded={true}
+                    round={true}
+                    style={
+                      Object {
+                        "height": "28px",
+                        "width": "28px",
+                      }
+                    }
+                    title="Foo Bar (foo@example.com)"
+                  >
+                    <span
+                      className="tip avatar e1w1ixlz0 css-p25dkn-StyledBaseAvatar-StyledAvatar-Circle e1b7pbn80"
+                      style={
+                        Object {
+                          "height": "28px",
+                          "width": "28px",
+                        }
+                      }
+                      title="Foo Bar (foo@example.com)"
+                    >
+                      <LetterAvatar
+                        displayName="Foo Bar"
+                        identifier="foo@example.com"
+                        round={true}
+>>>>>>> build(travis): yarn --pnp [WIP]
                       >
                         <Container
                           aria-describedby="tooltip-123456"
@@ -669,6 +784,7 @@ exports[`AvatarList renders with collapsed avatar count if > 5 users 1`] = `
                           onMouseEnter={[Function]}
                           onMouseLeave={[Function]}
                         >
+<<<<<<< HEAD
                           <span
                             aria-describedby="tooltip-123456"
                             className="css-1m3e0hg-Container erna86q0"
@@ -676,6 +792,11 @@ exports[`AvatarList renders with collapsed avatar count if > 5 users 1`] = `
                             onFocus={[Function]}
                             onMouseEnter={[Function]}
                             onMouseLeave={[Function]}
+=======
+                          <svg
+                            className="css-1r4mnb9-Svg e1lngh5w0"
+                            viewBox="0 0 120 120"
+>>>>>>> build(travis): yarn --pnp [WIP]
                           >
                             <StyledBaseAvatar
                               className="avatar css-ptswrs-StyledAvatar-Circle e1axh4r50"
@@ -775,7 +896,7 @@ exports[`AvatarList renders with collapsed avatar count if > 5 users 1`] = `
           }
         >
           <Avatar
-            className="css-ptswrs-StyledAvatar-Circle e1axh4r50"
+            className="css-ptswrs-StyledAvatar-Circle e1w1ixlz0"
             hasTooltip={true}
             size={28}
             tooltipOptions={
@@ -801,7 +922,7 @@ exports[`AvatarList renders with collapsed avatar count if > 5 users 1`] = `
             }
           >
             <UserAvatar
-              className="css-ptswrs-StyledAvatar-Circle e1axh4r50"
+              className="css-ptswrs-StyledAvatar-Circle e1w1ixlz0"
               gravatar={false}
               hasTooltip={true}
               size={28}
@@ -828,7 +949,7 @@ exports[`AvatarList renders with collapsed avatar count if > 5 users 1`] = `
               }
             >
               <BaseAvatar
-                className="css-ptswrs-StyledAvatar-Circle e1axh4r50"
+                className="css-ptswrs-StyledAvatar-Circle e1w1ixlz0"
                 gravatarId="foo@example.com"
                 hasTooltip={true}
                 letterId="foo@example.com"
@@ -851,10 +972,39 @@ exports[`AvatarList renders with collapsed avatar count if > 5 users 1`] = `
                   position="top"
                   title="Foo Bar (foo@example.com)"
                 >
+<<<<<<< HEAD
                   <Manager>
                     <Reference>
                       <InnerReference
                         setReferenceNode={[Function]}
+=======
+                  <StyledBaseAvatar
+                    className="tip avatar css-ptswrs-StyledAvatar-Circle e1w1ixlz0"
+                    loaded={true}
+                    round={true}
+                    style={
+                      Object {
+                        "height": "28px",
+                        "width": "28px",
+                      }
+                    }
+                    title="Foo Bar (foo@example.com)"
+                  >
+                    <span
+                      className="tip avatar e1w1ixlz0 css-p25dkn-StyledBaseAvatar-StyledAvatar-Circle e1b7pbn80"
+                      style={
+                        Object {
+                          "height": "28px",
+                          "width": "28px",
+                        }
+                      }
+                      title="Foo Bar (foo@example.com)"
+                    >
+                      <LetterAvatar
+                        displayName="Foo Bar"
+                        identifier="foo@example.com"
+                        round={true}
+>>>>>>> build(travis): yarn --pnp [WIP]
                       >
                         <Container
                           aria-describedby="tooltip-123456"
@@ -865,6 +1015,7 @@ exports[`AvatarList renders with collapsed avatar count if > 5 users 1`] = `
                           onMouseEnter={[Function]}
                           onMouseLeave={[Function]}
                         >
+<<<<<<< HEAD
                           <span
                             aria-describedby="tooltip-123456"
                             className="css-1m3e0hg-Container erna86q0"
@@ -872,6 +1023,11 @@ exports[`AvatarList renders with collapsed avatar count if > 5 users 1`] = `
                             onFocus={[Function]}
                             onMouseEnter={[Function]}
                             onMouseLeave={[Function]}
+=======
+                          <svg
+                            className="css-1r4mnb9-Svg e1lngh5w0"
+                            viewBox="0 0 120 120"
+>>>>>>> build(travis): yarn --pnp [WIP]
                           >
                             <StyledBaseAvatar
                               className="avatar css-ptswrs-StyledAvatar-Circle e1axh4r50"
@@ -971,7 +1127,7 @@ exports[`AvatarList renders with collapsed avatar count if > 5 users 1`] = `
           }
         >
           <Avatar
-            className="css-ptswrs-StyledAvatar-Circle e1axh4r50"
+            className="css-ptswrs-StyledAvatar-Circle e1w1ixlz0"
             hasTooltip={true}
             size={28}
             tooltipOptions={
@@ -997,7 +1153,7 @@ exports[`AvatarList renders with collapsed avatar count if > 5 users 1`] = `
             }
           >
             <UserAvatar
-              className="css-ptswrs-StyledAvatar-Circle e1axh4r50"
+              className="css-ptswrs-StyledAvatar-Circle e1w1ixlz0"
               gravatar={false}
               hasTooltip={true}
               size={28}
@@ -1024,7 +1180,7 @@ exports[`AvatarList renders with collapsed avatar count if > 5 users 1`] = `
               }
             >
               <BaseAvatar
-                className="css-ptswrs-StyledAvatar-Circle e1axh4r50"
+                className="css-ptswrs-StyledAvatar-Circle e1w1ixlz0"
                 gravatarId="foo@example.com"
                 hasTooltip={true}
                 letterId="foo@example.com"
@@ -1047,10 +1203,39 @@ exports[`AvatarList renders with collapsed avatar count if > 5 users 1`] = `
                   position="top"
                   title="Foo Bar (foo@example.com)"
                 >
+<<<<<<< HEAD
                   <Manager>
                     <Reference>
                       <InnerReference
                         setReferenceNode={[Function]}
+=======
+                  <StyledBaseAvatar
+                    className="tip avatar css-ptswrs-StyledAvatar-Circle e1w1ixlz0"
+                    loaded={true}
+                    round={true}
+                    style={
+                      Object {
+                        "height": "28px",
+                        "width": "28px",
+                      }
+                    }
+                    title="Foo Bar (foo@example.com)"
+                  >
+                    <span
+                      className="tip avatar e1w1ixlz0 css-p25dkn-StyledBaseAvatar-StyledAvatar-Circle e1b7pbn80"
+                      style={
+                        Object {
+                          "height": "28px",
+                          "width": "28px",
+                        }
+                      }
+                      title="Foo Bar (foo@example.com)"
+                    >
+                      <LetterAvatar
+                        displayName="Foo Bar"
+                        identifier="foo@example.com"
+                        round={true}
+>>>>>>> build(travis): yarn --pnp [WIP]
                       >
                         <Container
                           aria-describedby="tooltip-123456"
@@ -1061,6 +1246,7 @@ exports[`AvatarList renders with collapsed avatar count if > 5 users 1`] = `
                           onMouseEnter={[Function]}
                           onMouseLeave={[Function]}
                         >
+<<<<<<< HEAD
                           <span
                             aria-describedby="tooltip-123456"
                             className="css-1m3e0hg-Container erna86q0"
@@ -1068,6 +1254,11 @@ exports[`AvatarList renders with collapsed avatar count if > 5 users 1`] = `
                             onFocus={[Function]}
                             onMouseEnter={[Function]}
                             onMouseLeave={[Function]}
+=======
+                          <svg
+                            className="css-1r4mnb9-Svg e1lngh5w0"
+                            viewBox="0 0 120 120"
+>>>>>>> build(travis): yarn --pnp [WIP]
                           >
                             <StyledBaseAvatar
                               className="avatar css-ptswrs-StyledAvatar-Circle e1axh4r50"
@@ -1227,7 +1418,7 @@ exports[`AvatarList renders with user avatars 1`] = `
           }
         >
           <Avatar
-            className="css-ptswrs-StyledAvatar-Circle e1axh4r50"
+            className="css-ptswrs-StyledAvatar-Circle e1w1ixlz0"
             hasTooltip={true}
             size={28}
             tooltipOptions={
@@ -1253,7 +1444,7 @@ exports[`AvatarList renders with user avatars 1`] = `
             }
           >
             <UserAvatar
-              className="css-ptswrs-StyledAvatar-Circle e1axh4r50"
+              className="css-ptswrs-StyledAvatar-Circle e1w1ixlz0"
               gravatar={false}
               hasTooltip={true}
               size={28}
@@ -1280,7 +1471,7 @@ exports[`AvatarList renders with user avatars 1`] = `
               }
             >
               <BaseAvatar
-                className="css-ptswrs-StyledAvatar-Circle e1axh4r50"
+                className="css-ptswrs-StyledAvatar-Circle e1w1ixlz0"
                 gravatarId="foo@example.com"
                 hasTooltip={true}
                 letterId="foo@example.com"
@@ -1303,10 +1494,39 @@ exports[`AvatarList renders with user avatars 1`] = `
                   position="top"
                   title="Foo Bar (foo@example.com)"
                 >
+<<<<<<< HEAD
                   <Manager>
                     <Reference>
                       <InnerReference
                         setReferenceNode={[Function]}
+=======
+                  <StyledBaseAvatar
+                    className="tip avatar css-ptswrs-StyledAvatar-Circle e1w1ixlz0"
+                    loaded={true}
+                    round={true}
+                    style={
+                      Object {
+                        "height": "28px",
+                        "width": "28px",
+                      }
+                    }
+                    title="Foo Bar (foo@example.com)"
+                  >
+                    <span
+                      className="tip avatar e1w1ixlz0 css-p25dkn-StyledBaseAvatar-StyledAvatar-Circle e1b7pbn80"
+                      style={
+                        Object {
+                          "height": "28px",
+                          "width": "28px",
+                        }
+                      }
+                      title="Foo Bar (foo@example.com)"
+                    >
+                      <LetterAvatar
+                        displayName="Foo Bar"
+                        identifier="foo@example.com"
+                        round={true}
+>>>>>>> build(travis): yarn --pnp [WIP]
                       >
                         <Container
                           aria-describedby="tooltip-123456"
@@ -1317,6 +1537,7 @@ exports[`AvatarList renders with user avatars 1`] = `
                           onMouseEnter={[Function]}
                           onMouseLeave={[Function]}
                         >
+<<<<<<< HEAD
                           <span
                             aria-describedby="tooltip-123456"
                             className="css-1m3e0hg-Container erna86q0"
@@ -1324,6 +1545,11 @@ exports[`AvatarList renders with user avatars 1`] = `
                             onFocus={[Function]}
                             onMouseEnter={[Function]}
                             onMouseLeave={[Function]}
+=======
+                          <svg
+                            className="css-1r4mnb9-Svg e1lngh5w0"
+                            viewBox="0 0 120 120"
+>>>>>>> build(travis): yarn --pnp [WIP]
                           >
                             <StyledBaseAvatar
                               className="avatar css-ptswrs-StyledAvatar-Circle e1axh4r50"
@@ -1423,7 +1649,7 @@ exports[`AvatarList renders with user avatars 1`] = `
           }
         >
           <Avatar
-            className="css-ptswrs-StyledAvatar-Circle e1axh4r50"
+            className="css-ptswrs-StyledAvatar-Circle e1w1ixlz0"
             hasTooltip={true}
             size={28}
             tooltipOptions={
@@ -1449,7 +1675,7 @@ exports[`AvatarList renders with user avatars 1`] = `
             }
           >
             <UserAvatar
-              className="css-ptswrs-StyledAvatar-Circle e1axh4r50"
+              className="css-ptswrs-StyledAvatar-Circle e1w1ixlz0"
               gravatar={false}
               hasTooltip={true}
               size={28}
@@ -1476,7 +1702,7 @@ exports[`AvatarList renders with user avatars 1`] = `
               }
             >
               <BaseAvatar
-                className="css-ptswrs-StyledAvatar-Circle e1axh4r50"
+                className="css-ptswrs-StyledAvatar-Circle e1w1ixlz0"
                 gravatarId="foo@example.com"
                 hasTooltip={true}
                 letterId="foo@example.com"
@@ -1499,10 +1725,39 @@ exports[`AvatarList renders with user avatars 1`] = `
                   position="top"
                   title="Foo Bar (foo@example.com)"
                 >
+<<<<<<< HEAD
                   <Manager>
                     <Reference>
                       <InnerReference
                         setReferenceNode={[Function]}
+=======
+                  <StyledBaseAvatar
+                    className="tip avatar css-ptswrs-StyledAvatar-Circle e1w1ixlz0"
+                    loaded={true}
+                    round={true}
+                    style={
+                      Object {
+                        "height": "28px",
+                        "width": "28px",
+                      }
+                    }
+                    title="Foo Bar (foo@example.com)"
+                  >
+                    <span
+                      className="tip avatar e1w1ixlz0 css-p25dkn-StyledBaseAvatar-StyledAvatar-Circle e1b7pbn80"
+                      style={
+                        Object {
+                          "height": "28px",
+                          "width": "28px",
+                        }
+                      }
+                      title="Foo Bar (foo@example.com)"
+                    >
+                      <LetterAvatar
+                        displayName="Foo Bar"
+                        identifier="foo@example.com"
+                        round={true}
+>>>>>>> build(travis): yarn --pnp [WIP]
                       >
                         <Container
                           aria-describedby="tooltip-123456"
@@ -1513,6 +1768,7 @@ exports[`AvatarList renders with user avatars 1`] = `
                           onMouseEnter={[Function]}
                           onMouseLeave={[Function]}
                         >
+<<<<<<< HEAD
                           <span
                             aria-describedby="tooltip-123456"
                             className="css-1m3e0hg-Container erna86q0"
@@ -1520,6 +1776,11 @@ exports[`AvatarList renders with user avatars 1`] = `
                             onFocus={[Function]}
                             onMouseEnter={[Function]}
                             onMouseLeave={[Function]}
+=======
+                          <svg
+                            className="css-1r4mnb9-Svg e1lngh5w0"
+                            viewBox="0 0 120 120"
+>>>>>>> build(travis): yarn --pnp [WIP]
                           >
                             <StyledBaseAvatar
                               className="avatar css-ptswrs-StyledAvatar-Circle e1axh4r50"

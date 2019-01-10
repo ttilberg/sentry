@@ -75,7 +75,7 @@ exports[`InviteMember should render roles when available and allowed, and handle
     >
       <Wrapper>
         <div
-          className="css-1r5ylk7-Wrapper e1kblvez2"
+          className="css-1r5ylk7-Wrapper e1ievzxl2"
         >
           <Flex
             align="center"
@@ -92,15 +92,15 @@ exports[`InviteMember should render roles when available and allowed, and handle
                   styled={false}
                 >
                   <Base
-                    className="css-1ky52ze-Title e1kblvez0"
+                    className="css-1ky52ze-Title e1ievzxl0"
                   >
                     <div
-                      className="css-1ky52ze-Title e1kblvez0"
+                      className="css-1ky52ze-Title e1ievzxl0"
                       is={null}
                     >
                       <HeaderTitle>
                         <h4
-                          className="css-1w8ttcn-HeaderTitle e6lvex72"
+                          className="css-1w8ttcn-HeaderTitle elc10ae2"
                         >
                           Add Member to Organization
                         </h4>
@@ -116,10 +116,10 @@ exports[`InviteMember should render roles when available and allowed, and handle
     </SettingsPageHeading>
     <TextBlock>
       <Component
-        className="css-1geyb25-TextBlock ec8ep340"
+        className="css-1geyb25-TextBlock e12j2fov0"
       >
         <div
-          className="css-1geyb25-TextBlock ec8ep340"
+          className="css-1geyb25-TextBlock e12j2fov0"
         >
           Invite a member to join this organization via their email address. If they do not already have an account, they will first be asked to create one. Multiple emails delimited by commas.
         </div>
@@ -190,6 +190,7 @@ exports[`InviteMember should render roles when available and allowed, and handle
       >
         <Panel>
           <Component
+<<<<<<< HEAD
             className="css-10qfvek-Panel e1laxa7d0"
           >
             <div
@@ -202,15 +203,37 @@ exports[`InviteMember should render roles when available and allowed, and handle
                   <Flex
                     align="center"
                     className="css-7odsll-PanelHeader-getPadding e1p8v8nv0"
+=======
+            className="css-yahxlu-Panel e16u4s2c0"
+          >
+            <div
+              className="css-yahxlu-Panel e16u4s2c0"
+            >
+              <PanelHeader>
+                <Component
+                  className="css-xhx6pj-PanelHeader-getPadding e1o9kety0"
+                >
+                  <Flex
+                    align="center"
+                    className="css-xhx6pj-PanelHeader-getPadding e1o9kety0"
+>>>>>>> build(travis): yarn --pnp [WIP]
                     justify="space-between"
                   >
                     <Base
                       align="center"
+<<<<<<< HEAD
                       className="e1p8v8nv0 css-1fivf9w-PanelHeader-getPadding"
                       justify="space-between"
                     >
                       <div
                         className="e1p8v8nv0 css-1fivf9w-PanelHeader-getPadding"
+=======
+                      className="e1o9kety0 css-b7ices-PanelHeader-getPadding"
+                      justify="space-between"
+                    >
+                      <div
+                        className="e1o9kety0 css-b7ices-PanelHeader-getPadding"
+>>>>>>> build(travis): yarn --pnp [WIP]
                         is={null}
                       >
                         Role
@@ -234,18 +257,18 @@ exports[`InviteMember should render roles when available and allowed, and handle
                     p={2}
                   >
                     <Base
-                      className="css-125s2dx-PanelItem eo8n7lk0"
+                      className="css-125s2dx-PanelItem egwqg5y0"
                       onClick={[Function]}
                       p={2}
                     >
                       <div
-                        className="css-125s2dx-PanelItem eo8n7lk0"
+                        className="css-125s2dx-PanelItem egwqg5y0"
                         is={null}
                         onClick={[Function]}
                       >
                         <Label>
                           <label
-                            className="css-r8kahz-Label e1y9x5r70"
+                            className="css-r8kahz-Label ehiyefc0"
                           >
                             <Radio
                               checked={false}
@@ -285,10 +308,10 @@ exports[`InviteMember should render roles when available and allowed, and handle
                                 className="css-gx0lhm"
                               >
                                 <Component
-                                  className="css-1ai2po6-TextBlock ec8ep340"
+                                  className="css-1ai2po6-TextBlock e12j2fov0"
                                 >
                                   <div
-                                    className="css-1ai2po6-TextBlock ec8ep340"
+                                    className="css-1ai2po6-TextBlock e12j2fov0"
                                   >
                                     <div
                                       className="help-block"
@@ -311,18 +334,18 @@ exports[`InviteMember should render roles when available and allowed, and handle
                     p={2}
                   >
                     <Base
-                      className="css-125s2dx-PanelItem eo8n7lk0"
+                      className="css-125s2dx-PanelItem egwqg5y0"
                       onClick={[Function]}
                       p={2}
                     >
                       <div
-                        className="css-125s2dx-PanelItem eo8n7lk0"
+                        className="css-125s2dx-PanelItem egwqg5y0"
                         is={null}
                         onClick={[Function]}
                       >
                         <Label>
                           <label
-                            className="css-r8kahz-Label e1y9x5r70"
+                            className="css-r8kahz-Label ehiyefc0"
                           >
                             <Radio
                               checked={false}
@@ -362,10 +385,10 @@ exports[`InviteMember should render roles when available and allowed, and handle
                                 className="css-gx0lhm"
                               >
                                 <Component
-                                  className="css-1ai2po6-TextBlock ec8ep340"
+                                  className="css-1ai2po6-TextBlock e12j2fov0"
                                 >
                                   <div
-                                    className="css-1ai2po6-TextBlock ec8ep340"
+                                    className="css-1ai2po6-TextBlock e12j2fov0"
                                   >
                                     <div
                                       className="help-block"
@@ -482,30 +505,53 @@ exports[`InviteMember should render roles when available and allowed, and handle
         >
           <Panel>
             <Component
+<<<<<<< HEAD
               className="css-10qfvek-Panel e1laxa7d0"
             >
               <div
                 className="css-10qfvek-Panel e1laxa7d0"
+=======
+              className="css-yahxlu-Panel e16u4s2c0"
+            >
+              <div
+                className="css-yahxlu-Panel e16u4s2c0"
+>>>>>>> build(travis): yarn --pnp [WIP]
               >
                 <PanelHeader
                   hasButtons={true}
                 >
                   <Component
+<<<<<<< HEAD
                     className="css-1m2bast-PanelHeader-getPadding e1p8v8nv0"
+=======
+                    className="css-jmvceg-PanelHeader-getPadding e1o9kety0"
+>>>>>>> build(travis): yarn --pnp [WIP]
                     hasButtons={true}
                   >
                     <Flex
                       align="center"
+<<<<<<< HEAD
                       className="css-1m2bast-PanelHeader-getPadding e1p8v8nv0"
+=======
+                      className="css-jmvceg-PanelHeader-getPadding e1o9kety0"
+>>>>>>> build(travis): yarn --pnp [WIP]
                       justify="space-between"
                     >
                       <Base
                         align="center"
+<<<<<<< HEAD
                         className="e1p8v8nv0 css-yowjp-PanelHeader-getPadding"
                         justify="space-between"
                       >
                         <div
                           className="e1p8v8nv0 css-yowjp-PanelHeader-getPadding"
+=======
+                        className="e1o9kety0 css-19i62qd-PanelHeader-getPadding"
+                        justify="space-between"
+                      >
+                        <div
+                          className="e1o9kety0 css-19i62qd-PanelHeader-getPadding"
+>>>>>>> build(travis): yarn --pnp [WIP]
                           is={null}
                         >
                           Team
@@ -546,10 +592,10 @@ exports[`InviteMember should render roles when available and allowed, and handle
                                 >
                                   <AutoCompleteRoot>
                                     <Component
-                                      className="css-6v04yn-AutoCompleteRoot ejumqxq0"
+                                      className="css-6v04yn-AutoCompleteRoot egdot0r0"
                                     >
                                       <div
-                                        className="css-6v04yn-AutoCompleteRoot ejumqxq0"
+                                        className="css-6v04yn-AutoCompleteRoot egdot0r0"
                                       >
                                         <Actor
                                           innerRef={[Function]}
@@ -567,7 +613,11 @@ exports[`InviteMember should render roles when available and allowed, and handle
                                           tabIndex={-1}
                                         >
                                           <div
+<<<<<<< HEAD
                                             className="css-12n6mek-Actor e53us8t0"
+=======
+                                            className="css-17fe80j-Actor evu979k0"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                             onClick={[Function]}
                                             onKeyDown={[Function]}
                                             onMouseEnter={[Function]}
@@ -592,25 +642,38 @@ exports[`InviteMember should render roles when available and allowed, and handle
                                                 isOpen={false}
                                                 size="xsmall"
                                               >
+<<<<<<< HEAD
                                                 <ForwardRef
                                                   aria-label="Add Team"
                                                   className="css-13vimgs-StyledButton e1yghndz1"
+=======
+                                                <Component
+                                                  className="css-w99oc4-StyledButton e1a9ys5x1"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                   disabled={true}
                                                   isOpen={false}
                                                   size="xsmall"
                                                 >
                                                   <Button
+<<<<<<< HEAD
                                                     align="center"
                                                     aria-label="Add Team"
                                                     className="css-13vimgs-StyledButton e1yghndz1"
+=======
+                                                    className="css-w99oc4-StyledButton e1a9ys5x1"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                     disabled={true}
                                                     innerRef={null}
                                                     size="xsmall"
                                                   >
                                                     <StyledButton
                                                       aria-disabled={true}
+<<<<<<< HEAD
                                                       aria-label="Add Team"
                                                       className="css-13vimgs-StyledButton e1yghndz1"
+=======
+                                                      className="css-w99oc4-StyledButton e1a9ys5x1"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                       disabled={true}
                                                       href={null}
                                                       innerRef={null}
@@ -621,9 +684,13 @@ exports[`InviteMember should render roles when available and allowed, and handle
                                                     >
                                                       <ForwardRef
                                                         aria-disabled={true}
+<<<<<<< HEAD
                                                         aria-label="Add Team"
                                                         className="e1yghndz1 css-6mwd61-StyledButton-getColors-StyledButton e12ma6z0"
                                                         disabled={true}
+=======
+                                                        className="e1a9ys5x1 css-10lmrhm-StyledButton-getColors-StyledButton e7bsqvz0"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                         href={null}
                                                         onClick={[Function]}
                                                         role="button"
@@ -632,8 +699,12 @@ exports[`InviteMember should render roles when available and allowed, and handle
                                                       >
                                                         <button
                                                           aria-disabled={true}
+<<<<<<< HEAD
                                                           aria-label="Add Team"
                                                           className="e1yghndz1 css-6mwd61-StyledButton-getColors-StyledButton e12ma6z0"
+=======
+                                                          className="e1a9ys5x1 css-10lmrhm-StyledButton-getColors-StyledButton e7bsqvz0"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                           href={null}
                                                           onClick={[Function]}
                                                           role="button"
@@ -645,30 +716,38 @@ exports[`InviteMember should render roles when available and allowed, and handle
                                                             size="xsmall"
                                                           >
                                                             <Component
+<<<<<<< HEAD
                                                               align="center"
                                                               className="css-1bqncjo-ButtonLabel e12ma6z1"
                                                               size="xsmall"
                                                             >
                                                               <span
                                                                 className="css-1bqncjo-ButtonLabel e12ma6z1"
+=======
+                                                              className="css-uthd1f-ButtonLabel e7bsqvz1"
+                                                              size="xsmall"
+                                                            >
+                                                              <span
+                                                                className="css-uthd1f-ButtonLabel e7bsqvz1"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                               >
                                                                 Add Team
                                                                 <StyledChevronDown>
                                                                   <Component
-                                                                    className="css-17v3tc-StyledChevronDown e1yghndz0"
+                                                                    className="css-17v3tc-StyledChevronDown e1a9ys5x0"
                                                                   >
                                                                     <InlineSvg
-                                                                      className="css-17v3tc-StyledChevronDown e1yghndz0"
+                                                                      className="css-17v3tc-StyledChevronDown e1a9ys5x0"
                                                                       src="icon-chevron-down"
                                                                     >
                                                                       <StyledSvg
-                                                                        className="css-17v3tc-StyledChevronDown e1yghndz0"
+                                                                        className="css-17v3tc-StyledChevronDown e1a9ys5x0"
                                                                         height="1em"
                                                                         viewBox={Object {}}
                                                                         width="1em"
                                                                       >
                                                                         <svg
-                                                                          className="e1yghndz0 css-1gdv3x4-StyledSvg-StyledChevronDown e2idor0"
+                                                                          className="e1a9ys5x0 css-1gdv3x4-StyledSvg-StyledChevronDown ebb48o80"
                                                                           height="1em"
                                                                           viewBox={Object {}}
                                                                           width="1em"
@@ -719,18 +798,22 @@ exports[`InviteMember should render roles when available and allowed, and handle
                         data-test-id="empty-message"
                       >
                         <div
+<<<<<<< HEAD
                           className="css-ev9qm0-Wrapper eh488yo0"
                           data-test-id="empty-message"
+=======
+                          className="css-ev9qm0-Wrapper e3bh5aq0"
+>>>>>>> build(travis): yarn --pnp [WIP]
                         >
                           <Description
                             noMargin={true}
                           >
                             <Component
-                              className="css-pwn5v-TextBlock-Description-MarginStyles eh488yo1"
+                              className="css-pwn5v-TextBlock-Description-MarginStyles e3bh5aq1"
                               noMargin={true}
                             >
                               <div
-                                className="css-pwn5v-TextBlock-Description-MarginStyles eh488yo1"
+                                className="css-pwn5v-TextBlock-Description-MarginStyles e3bh5aq1"
                               >
                                 No Teams assigned
                               </div>
@@ -767,9 +850,13 @@ exports[`InviteMember should render roles when available and allowed, and handle
           <ForwardRef
             aria-disabled={false}
             aria-label="Add Member"
+<<<<<<< HEAD
             busy={false}
             className="invite-member-submit css-1qchtmp-StyledButton-getColors e12ma6z0"
             disabled={false}
+=======
+            className="invite-member-submit css-1msljz8-StyledButton-getColors e7bsqvz0"
+>>>>>>> build(travis): yarn --pnp [WIP]
             onClick={[Function]}
             priority="primary"
             role="button"
@@ -777,7 +864,11 @@ exports[`InviteMember should render roles when available and allowed, and handle
             <button
               aria-disabled={false}
               aria-label="Add Member"
+<<<<<<< HEAD
               className="invite-member-submit css-1qchtmp-StyledButton-getColors e12ma6z0"
+=======
+              className="invite-member-submit css-1msljz8-StyledButton-getColors e7bsqvz0"
+>>>>>>> build(travis): yarn --pnp [WIP]
               onClick={[Function]}
               role="button"
             >
@@ -786,12 +877,20 @@ exports[`InviteMember should render roles when available and allowed, and handle
                 priority="primary"
               >
                 <Component
+<<<<<<< HEAD
                   align="center"
                   className="css-oo1m2a-ButtonLabel e12ma6z1"
                   priority="primary"
                 >
                   <span
                     className="css-oo1m2a-ButtonLabel e12ma6z1"
+=======
+                  className="css-ga4b18-ButtonLabel e7bsqvz1"
+                  priority="primary"
+                >
+                  <span
+                    className="css-ga4b18-ButtonLabel e7bsqvz1"
+>>>>>>> build(travis): yarn --pnp [WIP]
                   >
                     Add Member
                   </span>

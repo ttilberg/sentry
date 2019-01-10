@@ -70,7 +70,7 @@ exports[`SentryAppPermissionsModal installs the application 1`] = `
     >
       <Title>
         <p
-          className="css-dvcemm-Title ey7jt0i1"
+          className="css-dvcemm-Title e18rmqy21"
         >
           Install on your 
           <strong>
@@ -81,21 +81,28 @@ exports[`SentryAppPermissionsModal installs the application 1`] = `
       </Title>
       <Panel>
         <Component
+<<<<<<< HEAD
           className="css-10qfvek-Panel e1laxa7d0"
         >
           <div
             className="css-10qfvek-Panel e1laxa7d0"
+=======
+          className="css-yahxlu-Panel e16u4s2c0"
+        >
+          <div
+            className="css-yahxlu-Panel e16u4s2c0"
+>>>>>>> build(travis): yarn --pnp [WIP]
           >
             <PanelItem
               key="read"
               p={2}
             >
               <Base
-                className="css-125s2dx-PanelItem eo8n7lk0"
+                className="css-125s2dx-PanelItem egwqg5y0"
                 p={2}
               >
                 <div
-                  className="css-125s2dx-PanelItem eo8n7lk0"
+                  className="css-125s2dx-PanelItem egwqg5y0"
                   is={null}
                 >
                   <p>
@@ -117,7 +124,7 @@ exports[`SentryAppPermissionsModal installs the application 1`] = `
   >
     <RedirectionInfo>
       <div
-        className="css-ysuc35-RedirectionInfo ey7jt0i2"
+        className="css-ysuc35-RedirectionInfo e18rmqy22"
       >
         After installation you'll be redirected to the Sample App service to finish setup.
       </div>
@@ -129,8 +136,12 @@ exports[`SentryAppPermissionsModal installs the application 1`] = `
       priority="success"
     >
       <Button
+<<<<<<< HEAD
         align="center"
         className="css-159raph-StyledButton ey7jt0i0"
+=======
+        className="css-159raph-StyledButton e18rmqy20"
+>>>>>>> build(travis): yarn --pnp [WIP]
         disabled={false}
         onClick={[Function]}
         priority="success"
@@ -138,7 +149,7 @@ exports[`SentryAppPermissionsModal installs the application 1`] = `
         <StyledButton
           aria-disabled={false}
           aria-label="Install"
-          className="css-159raph-StyledButton ey7jt0i0"
+          className="css-159raph-StyledButton e18rmqy20"
           disabled={false}
           onClick={[Function]}
           priority="success"
@@ -147,8 +158,12 @@ exports[`SentryAppPermissionsModal installs the application 1`] = `
           <ForwardRef
             aria-disabled={false}
             aria-label="Install"
+<<<<<<< HEAD
             className="ey7jt0i0 css-13hgyx8-StyledButton-getColors-StyledButton e12ma6z0"
             disabled={false}
+=======
+            className="e18rmqy20 css-17kpa0r-StyledButton-getColors-StyledButton e7bsqvz0"
+>>>>>>> build(travis): yarn --pnp [WIP]
             onClick={[Function]}
             priority="success"
             role="button"
@@ -156,7 +171,11 @@ exports[`SentryAppPermissionsModal installs the application 1`] = `
             <button
               aria-disabled={false}
               aria-label="Install"
+<<<<<<< HEAD
               className="ey7jt0i0 css-13hgyx8-StyledButton-getColors-StyledButton e12ma6z0"
+=======
+              className="e18rmqy20 css-17kpa0r-StyledButton-getColors-StyledButton e7bsqvz0"
+>>>>>>> build(travis): yarn --pnp [WIP]
               onClick={[Function]}
               role="button"
             >
@@ -165,12 +184,20 @@ exports[`SentryAppPermissionsModal installs the application 1`] = `
                 priority="success"
               >
                 <Component
+<<<<<<< HEAD
                   align="center"
                   className="css-oo1m2a-ButtonLabel e12ma6z1"
                   priority="success"
                 >
                   <span
                     className="css-oo1m2a-ButtonLabel e12ma6z1"
+=======
+                  className="css-ga4b18-ButtonLabel e7bsqvz1"
+                  priority="success"
+                >
+                  <span
+                    className="css-ga4b18-ButtonLabel e7bsqvz1"
+>>>>>>> build(travis): yarn --pnp [WIP]
                   >
                     Install
                   </span>
@@ -187,15 +214,19 @@ exports[`SentryAppPermissionsModal installs the application 1`] = `
       onClick={[MockFunction]}
     >
       <Button
+<<<<<<< HEAD
         align="center"
         className="css-159raph-StyledButton ey7jt0i0"
+=======
+        className="css-159raph-StyledButton e18rmqy20"
+>>>>>>> build(travis): yarn --pnp [WIP]
         disabled={false}
         onClick={[MockFunction]}
       >
         <StyledButton
           aria-disabled={false}
           aria-label="Cancel"
-          className="css-159raph-StyledButton ey7jt0i0"
+          className="css-159raph-StyledButton e18rmqy20"
           disabled={false}
           onClick={[Function]}
           role="button"
@@ -203,15 +234,23 @@ exports[`SentryAppPermissionsModal installs the application 1`] = `
           <ForwardRef
             aria-disabled={false}
             aria-label="Cancel"
+<<<<<<< HEAD
             className="ey7jt0i0 css-pssgxf-StyledButton-getColors-StyledButton e12ma6z0"
             disabled={false}
+=======
+            className="e18rmqy20 css-1xref87-StyledButton-getColors-StyledButton e7bsqvz0"
+>>>>>>> build(travis): yarn --pnp [WIP]
             onClick={[Function]}
             role="button"
           >
             <button
               aria-disabled={false}
               aria-label="Cancel"
+<<<<<<< HEAD
               className="ey7jt0i0 css-pssgxf-StyledButton-getColors-StyledButton e12ma6z0"
+=======
+              className="e18rmqy20 css-1xref87-StyledButton-getColors-StyledButton e7bsqvz0"
+>>>>>>> build(travis): yarn --pnp [WIP]
               onClick={[Function]}
               role="button"
             >
@@ -219,11 +258,18 @@ exports[`SentryAppPermissionsModal installs the application 1`] = `
                 align="center"
               >
                 <Component
+<<<<<<< HEAD
                   align="center"
                   className="css-oo1m2a-ButtonLabel e12ma6z1"
                 >
                   <span
                     className="css-oo1m2a-ButtonLabel e12ma6z1"
+=======
+                  className="css-ga4b18-ButtonLabel e7bsqvz1"
+                >
+                  <span
+                    className="css-ga4b18-ButtonLabel e7bsqvz1"
+>>>>>>> build(travis): yarn --pnp [WIP]
                   >
                     Cancel
                   </span>
@@ -308,7 +354,7 @@ exports[`SentryAppPermissionsModal renders permissions modal 1`] = `
     >
       <Title>
         <p
-          className="css-dvcemm-Title ey7jt0i1"
+          className="css-dvcemm-Title e18rmqy21"
         >
           Install on your 
           <strong>
@@ -319,21 +365,28 @@ exports[`SentryAppPermissionsModal renders permissions modal 1`] = `
       </Title>
       <Panel>
         <Component
+<<<<<<< HEAD
           className="css-10qfvek-Panel e1laxa7d0"
         >
           <div
             className="css-10qfvek-Panel e1laxa7d0"
+=======
+          className="css-yahxlu-Panel e16u4s2c0"
+        >
+          <div
+            className="css-yahxlu-Panel e16u4s2c0"
+>>>>>>> build(travis): yarn --pnp [WIP]
           >
             <PanelItem
               key="read"
               p={2}
             >
               <Base
-                className="css-125s2dx-PanelItem eo8n7lk0"
+                className="css-125s2dx-PanelItem egwqg5y0"
                 p={2}
               >
                 <div
-                  className="css-125s2dx-PanelItem eo8n7lk0"
+                  className="css-125s2dx-PanelItem egwqg5y0"
                   is={null}
                 >
                   <p>
@@ -355,7 +408,7 @@ exports[`SentryAppPermissionsModal renders permissions modal 1`] = `
   >
     <RedirectionInfo>
       <div
-        className="css-ysuc35-RedirectionInfo ey7jt0i2"
+        className="css-ysuc35-RedirectionInfo e18rmqy22"
       >
         After installation you'll be redirected to the Sample App service to finish setup.
       </div>
@@ -367,8 +420,12 @@ exports[`SentryAppPermissionsModal renders permissions modal 1`] = `
       priority="success"
     >
       <Button
+<<<<<<< HEAD
         align="center"
         className="css-159raph-StyledButton ey7jt0i0"
+=======
+        className="css-159raph-StyledButton e18rmqy20"
+>>>>>>> build(travis): yarn --pnp [WIP]
         disabled={false}
         onClick={[Function]}
         priority="success"
@@ -376,7 +433,7 @@ exports[`SentryAppPermissionsModal renders permissions modal 1`] = `
         <StyledButton
           aria-disabled={false}
           aria-label="Install"
-          className="css-159raph-StyledButton ey7jt0i0"
+          className="css-159raph-StyledButton e18rmqy20"
           disabled={false}
           onClick={[Function]}
           priority="success"
@@ -385,8 +442,12 @@ exports[`SentryAppPermissionsModal renders permissions modal 1`] = `
           <ForwardRef
             aria-disabled={false}
             aria-label="Install"
+<<<<<<< HEAD
             className="ey7jt0i0 css-13hgyx8-StyledButton-getColors-StyledButton e12ma6z0"
             disabled={false}
+=======
+            className="e18rmqy20 css-17kpa0r-StyledButton-getColors-StyledButton e7bsqvz0"
+>>>>>>> build(travis): yarn --pnp [WIP]
             onClick={[Function]}
             priority="success"
             role="button"
@@ -394,7 +455,11 @@ exports[`SentryAppPermissionsModal renders permissions modal 1`] = `
             <button
               aria-disabled={false}
               aria-label="Install"
+<<<<<<< HEAD
               className="ey7jt0i0 css-13hgyx8-StyledButton-getColors-StyledButton e12ma6z0"
+=======
+              className="e18rmqy20 css-17kpa0r-StyledButton-getColors-StyledButton e7bsqvz0"
+>>>>>>> build(travis): yarn --pnp [WIP]
               onClick={[Function]}
               role="button"
             >
@@ -403,12 +468,20 @@ exports[`SentryAppPermissionsModal renders permissions modal 1`] = `
                 priority="success"
               >
                 <Component
+<<<<<<< HEAD
                   align="center"
                   className="css-oo1m2a-ButtonLabel e12ma6z1"
                   priority="success"
                 >
                   <span
                     className="css-oo1m2a-ButtonLabel e12ma6z1"
+=======
+                  className="css-ga4b18-ButtonLabel e7bsqvz1"
+                  priority="success"
+                >
+                  <span
+                    className="css-ga4b18-ButtonLabel e7bsqvz1"
+>>>>>>> build(travis): yarn --pnp [WIP]
                   >
                     Install
                   </span>
@@ -425,15 +498,19 @@ exports[`SentryAppPermissionsModal renders permissions modal 1`] = `
       onClick={[MockFunction]}
     >
       <Button
+<<<<<<< HEAD
         align="center"
         className="css-159raph-StyledButton ey7jt0i0"
+=======
+        className="css-159raph-StyledButton e18rmqy20"
+>>>>>>> build(travis): yarn --pnp [WIP]
         disabled={false}
         onClick={[MockFunction]}
       >
         <StyledButton
           aria-disabled={false}
           aria-label="Cancel"
-          className="css-159raph-StyledButton ey7jt0i0"
+          className="css-159raph-StyledButton e18rmqy20"
           disabled={false}
           onClick={[Function]}
           role="button"
@@ -441,15 +518,23 @@ exports[`SentryAppPermissionsModal renders permissions modal 1`] = `
           <ForwardRef
             aria-disabled={false}
             aria-label="Cancel"
+<<<<<<< HEAD
             className="ey7jt0i0 css-pssgxf-StyledButton-getColors-StyledButton e12ma6z0"
             disabled={false}
+=======
+            className="e18rmqy20 css-1xref87-StyledButton-getColors-StyledButton e7bsqvz0"
+>>>>>>> build(travis): yarn --pnp [WIP]
             onClick={[Function]}
             role="button"
           >
             <button
               aria-disabled={false}
               aria-label="Cancel"
+<<<<<<< HEAD
               className="ey7jt0i0 css-pssgxf-StyledButton-getColors-StyledButton e12ma6z0"
+=======
+              className="e18rmqy20 css-1xref87-StyledButton-getColors-StyledButton e7bsqvz0"
+>>>>>>> build(travis): yarn --pnp [WIP]
               onClick={[Function]}
               role="button"
             >
@@ -457,11 +542,18 @@ exports[`SentryAppPermissionsModal renders permissions modal 1`] = `
                 align="center"
               >
                 <Component
+<<<<<<< HEAD
                   align="center"
                   className="css-oo1m2a-ButtonLabel e12ma6z1"
                 >
                   <span
                     className="css-oo1m2a-ButtonLabel e12ma6z1"
+=======
+                  className="css-ga4b18-ButtonLabel e7bsqvz1"
+                >
+                  <span
+                    className="css-ga4b18-ButtonLabel e7bsqvz1"
+>>>>>>> build(travis): yarn --pnp [WIP]
                   >
                     Cancel
                   </span>

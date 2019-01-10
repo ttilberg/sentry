@@ -138,24 +138,40 @@ exports[`ProjectPluginRow renders 1`] = `
             >
               <PluginInfo>
                 <div
+<<<<<<< HEAD
                   className="css-sm2hu2-PluginInfo e1y7j6vq0"
+=======
+                  className="css-sm2hu2-PluginInfo ensvjrv0"
+>>>>>>> build(travis): yarn --pnp [WIP]
                 >
                   <StyledPluginIcon
                     pluginId="amazon-sqs"
                     size={48}
                   >
                     <PluginIcon
+<<<<<<< HEAD
                       className="css-228l0j-StyledPluginIcon e1y7j6vq2"
+=======
+                      className="css-228l0j-StyledPluginIcon ensvjrv2"
+>>>>>>> build(travis): yarn --pnp [WIP]
                       pluginId="amazon-sqs"
                       size={48}
                     >
                       <IntegrationIcon
+<<<<<<< HEAD
                         className="css-228l0j-StyledPluginIcon e1y7j6vq2"
+=======
+                        className="css-228l0j-StyledPluginIcon ensvjrv2"
+>>>>>>> build(travis): yarn --pnp [WIP]
                         image={Object {}}
                         size={48}
                       >
                         <div
+<<<<<<< HEAD
                           className="e1y7j6vq2 css-vzj3gb-IntegrationIcon-StyledPluginIcon e1bhjds90"
+=======
+                          className="ensvjrv2 css-lxugym-IntegrationIcon-StyledPluginIcon e1ehkbfw0"
+>>>>>>> build(travis): yarn --pnp [WIP]
                           size={48}
                         />
                       </IntegrationIcon>
@@ -176,7 +192,11 @@ exports[`ProjectPluginRow renders 1`] = `
                       >
                         <PluginName>
                           <div
+<<<<<<< HEAD
                             className="css-36lssg-PluginName e1y7j6vq1"
+=======
+                            className="css-36lssg-PluginName ensvjrv1"
+>>>>>>> build(travis): yarn --pnp [WIP]
                           >
                             Amazon SQS 
                             <DynamicWrapper
@@ -194,7 +214,11 @@ exports[`ProjectPluginRow renders 1`] = `
                               <span>
                                 <Version>
                                   <span
+<<<<<<< HEAD
                                     className="css-1det7j8-Version e1y7j6vq3"
+=======
+                                    className="css-1det7j8-Version ensvjrv3"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                   >
                                     v8.23.0.dev0
                                   </span>
@@ -261,7 +285,7 @@ exports[`ProjectPluginRow renders 1`] = `
                 >
                   <div
                     aria-checked={false}
-                    className="css-eo6s8j-SwitchContainer e1wgeblw0"
+                    className="css-eo6s8j-SwitchContainer e15l4ie20"
                     data-test-id="switch"
                     onClick={[Function]}
                     role="checkbox"
@@ -273,7 +297,7 @@ exports[`ProjectPluginRow renders 1`] = `
                       size="lg"
                     >
                       <span
-                        className="css-1uoqc08-Toggle e1wgeblw1"
+                        className="css-1uoqc08-Toggle e15l4ie21"
                         size="lg"
                       />
                     </Toggle>

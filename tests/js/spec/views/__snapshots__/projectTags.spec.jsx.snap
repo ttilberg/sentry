@@ -21,7 +21,7 @@ exports[`ProjectTags renders 1`] = `
       >
         <Wrapper>
           <div
-            className="css-1r5ylk7-Wrapper e1kblvez2"
+            className="css-1r5ylk7-Wrapper e1ievzxl2"
           >
             <Flex
               align="center"
@@ -38,15 +38,15 @@ exports[`ProjectTags renders 1`] = `
                     styled={false}
                   >
                     <Base
-                      className="css-1ky52ze-Title e1kblvez0"
+                      className="css-1ky52ze-Title e1ievzxl0"
                     >
                       <div
-                        className="css-1ky52ze-Title e1kblvez0"
+                        className="css-1ky52ze-Title e1ievzxl0"
                         is={null}
                       >
                         <HeaderTitle>
                           <h4
-                            className="css-1w8ttcn-HeaderTitle e6lvex72"
+                            className="css-1w8ttcn-HeaderTitle elc10ae2"
                           >
                             Tags
                           </h4>
@@ -182,10 +182,10 @@ exports[`ProjectTags renders 1`] = `
       </PermissionAlert>
       <TextBlock>
         <Component
-          className="css-1geyb25-TextBlock ec8ep340"
+          className="css-1geyb25-TextBlock e12j2fov0"
         >
           <div
-            className="css-1geyb25-TextBlock ec8ep340"
+            className="css-1geyb25-TextBlock e12j2fov0"
           >
             <span
               key="5"
@@ -225,6 +225,7 @@ exports[`ProjectTags renders 1`] = `
       </TextBlock>
       <Panel>
         <Component
+<<<<<<< HEAD
           className="css-10qfvek-Panel e1laxa7d0"
         >
           <div
@@ -237,15 +238,37 @@ exports[`ProjectTags renders 1`] = `
                 <Flex
                   align="center"
                   className="css-7odsll-PanelHeader-getPadding e1p8v8nv0"
+=======
+          className="css-yahxlu-Panel e16u4s2c0"
+        >
+          <div
+            className="css-yahxlu-Panel e16u4s2c0"
+          >
+            <PanelHeader>
+              <Component
+                className="css-xhx6pj-PanelHeader-getPadding e1o9kety0"
+              >
+                <Flex
+                  align="center"
+                  className="css-xhx6pj-PanelHeader-getPadding e1o9kety0"
+>>>>>>> build(travis): yarn --pnp [WIP]
                   justify="space-between"
                 >
                   <Base
                     align="center"
+<<<<<<< HEAD
                     className="e1p8v8nv0 css-1fivf9w-PanelHeader-getPadding"
                     justify="space-between"
                   >
                     <div
                       className="e1p8v8nv0 css-1fivf9w-PanelHeader-getPadding"
+=======
+                    className="e1o9kety0 css-b7ices-PanelHeader-getPadding"
+                    justify="space-between"
+                  >
+                    <div
+                      className="e1o9kety0 css-b7ices-PanelHeader-getPadding"
+>>>>>>> build(travis): yarn --pnp [WIP]
                       is={null}
                     >
                       <Flex>
@@ -405,11 +428,11 @@ exports[`ProjectTags renders 1`] = `
                       >
                         <Base
                           align="center"
-                          className="ref-tag-row css-1jykl04-PanelItem eo8n7lk0"
+                          className="ref-tag-row css-1jykl04-PanelItem egwqg5y0"
                           p={0}
                         >
                           <div
-                            className="ref-tag-row css-1jykl04-PanelItem eo8n7lk0"
+                            className="ref-tag-row css-1jykl04-PanelItem egwqg5y0"
                             is={null}
                           >
                             <Box
@@ -491,7 +514,11 @@ exports[`ProjectTags renders 1`] = `
                                             >
                                               <ForwardRef
                                                 aria-disabled={false}
+<<<<<<< HEAD
                                                 className="css-1uhlusb-StyledButton-getColors e12ma6z0"
+=======
+                                                className="css-dkprmi-StyledButton-getColors e7bsqvz0"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                 data-test-id="delete"
                                                 disabled={false}
                                                 onClick={[Function]}
@@ -500,7 +527,11 @@ exports[`ProjectTags renders 1`] = `
                                               >
                                                 <button
                                                   aria-disabled={false}
+<<<<<<< HEAD
                                                   className="css-1uhlusb-StyledButton-getColors e12ma6z0"
+=======
+                                                  className="css-dkprmi-StyledButton-getColors e7bsqvz0"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                   data-test-id="delete"
                                                   onClick={[Function]}
                                                   role="button"
@@ -511,24 +542,40 @@ exports[`ProjectTags renders 1`] = `
                                                     size="xsmall"
                                                   >
                                                     <Component
+<<<<<<< HEAD
                                                       align="center"
                                                       className="css-1bqncjo-ButtonLabel e12ma6z1"
                                                       size="xsmall"
                                                     >
                                                       <span
                                                         className="css-1bqncjo-ButtonLabel e12ma6z1"
+=======
+                                                      className="css-uthd1f-ButtonLabel e7bsqvz1"
+                                                      size="xsmall"
+                                                    >
+                                                      <span
+                                                        className="css-uthd1f-ButtonLabel e7bsqvz1"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                       >
                                                         <Icon
                                                           hasChildren={false}
                                                           size="xsmall"
                                                         >
                                                           <Component
+<<<<<<< HEAD
                                                             className="css-ljhpxy-Icon e12ma6z2"
+=======
+                                                            className="css-ljhpxy-Icon e7bsqvz2"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                             hasChildren={false}
                                                             size="xsmall"
                                                           >
                                                             <span
+<<<<<<< HEAD
                                                               className="css-ljhpxy-Icon e12ma6z2"
+=======
+                                                              className="css-ljhpxy-Icon e7bsqvz2"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                               size="xsmall"
                                                             >
                                                               <StyledInlineSvg
@@ -536,18 +583,30 @@ exports[`ProjectTags renders 1`] = `
                                                                 src="icon-trash"
                                                               >
                                                                 <InlineSvg
+<<<<<<< HEAD
                                                                   className="css-1ov3rcq-StyledInlineSvg e12ma6z3"
+=======
+                                                                  className="css-1ov3rcq-StyledInlineSvg e7bsqvz3"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                                   size="12px"
                                                                   src="icon-trash"
                                                                 >
                                                                   <StyledSvg
+<<<<<<< HEAD
                                                                     className="css-1ov3rcq-StyledInlineSvg e12ma6z3"
+=======
+                                                                    className="css-1ov3rcq-StyledInlineSvg e7bsqvz3"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                                     height="12px"
                                                                     viewBox={Object {}}
                                                                     width="12px"
                                                                   >
                                                                     <svg
+<<<<<<< HEAD
                                                                       className="e12ma6z3 css-1jjmnki-StyledSvg-StyledInlineSvg e2idor0"
+=======
+                                                                      className="e7bsqvz3 css-1jjmnki-StyledSvg-StyledInlineSvg ebb48o80"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                                       height="12px"
                                                                       viewBox={Object {}}
                                                                       width="12px"
@@ -640,11 +699,11 @@ exports[`ProjectTags renders 1`] = `
                       >
                         <Base
                           align="center"
-                          className="ref-tag-row css-1jykl04-PanelItem eo8n7lk0"
+                          className="ref-tag-row css-1jykl04-PanelItem egwqg5y0"
                           p={0}
                         >
                           <div
-                            className="ref-tag-row css-1jykl04-PanelItem eo8n7lk0"
+                            className="ref-tag-row css-1jykl04-PanelItem egwqg5y0"
                             is={null}
                           >
                             <Box
@@ -726,7 +785,11 @@ exports[`ProjectTags renders 1`] = `
                                             >
                                               <ForwardRef
                                                 aria-disabled={false}
+<<<<<<< HEAD
                                                 className="css-1uhlusb-StyledButton-getColors e12ma6z0"
+=======
+                                                className="css-dkprmi-StyledButton-getColors e7bsqvz0"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                 data-test-id="delete"
                                                 disabled={false}
                                                 onClick={[Function]}
@@ -735,7 +798,11 @@ exports[`ProjectTags renders 1`] = `
                                               >
                                                 <button
                                                   aria-disabled={false}
+<<<<<<< HEAD
                                                   className="css-1uhlusb-StyledButton-getColors e12ma6z0"
+=======
+                                                  className="css-dkprmi-StyledButton-getColors e7bsqvz0"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                   data-test-id="delete"
                                                   onClick={[Function]}
                                                   role="button"
@@ -746,24 +813,40 @@ exports[`ProjectTags renders 1`] = `
                                                     size="xsmall"
                                                   >
                                                     <Component
+<<<<<<< HEAD
                                                       align="center"
                                                       className="css-1bqncjo-ButtonLabel e12ma6z1"
                                                       size="xsmall"
                                                     >
                                                       <span
                                                         className="css-1bqncjo-ButtonLabel e12ma6z1"
+=======
+                                                      className="css-uthd1f-ButtonLabel e7bsqvz1"
+                                                      size="xsmall"
+                                                    >
+                                                      <span
+                                                        className="css-uthd1f-ButtonLabel e7bsqvz1"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                       >
                                                         <Icon
                                                           hasChildren={false}
                                                           size="xsmall"
                                                         >
                                                           <Component
+<<<<<<< HEAD
                                                             className="css-ljhpxy-Icon e12ma6z2"
+=======
+                                                            className="css-ljhpxy-Icon e7bsqvz2"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                             hasChildren={false}
                                                             size="xsmall"
                                                           >
                                                             <span
+<<<<<<< HEAD
                                                               className="css-ljhpxy-Icon e12ma6z2"
+=======
+                                                              className="css-ljhpxy-Icon e7bsqvz2"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                               size="xsmall"
                                                             >
                                                               <StyledInlineSvg
@@ -771,18 +854,30 @@ exports[`ProjectTags renders 1`] = `
                                                                 src="icon-trash"
                                                               >
                                                                 <InlineSvg
+<<<<<<< HEAD
                                                                   className="css-1ov3rcq-StyledInlineSvg e12ma6z3"
+=======
+                                                                  className="css-1ov3rcq-StyledInlineSvg e7bsqvz3"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                                   size="12px"
                                                                   src="icon-trash"
                                                                 >
                                                                   <StyledSvg
+<<<<<<< HEAD
                                                                     className="css-1ov3rcq-StyledInlineSvg e12ma6z3"
+=======
+                                                                    className="css-1ov3rcq-StyledInlineSvg e7bsqvz3"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                                     height="12px"
                                                                     viewBox={Object {}}
                                                                     width="12px"
                                                                   >
                                                                     <svg
+<<<<<<< HEAD
                                                                       className="e12ma6z3 css-1jjmnki-StyledSvg-StyledInlineSvg e2idor0"
+=======
+                                                                      className="e7bsqvz3 css-1jjmnki-StyledSvg-StyledInlineSvg ebb48o80"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                                       height="12px"
                                                                       viewBox={Object {}}
                                                                       width="12px"
@@ -875,11 +970,11 @@ exports[`ProjectTags renders 1`] = `
                       >
                         <Base
                           align="center"
-                          className="ref-tag-row css-1jykl04-PanelItem eo8n7lk0"
+                          className="ref-tag-row css-1jykl04-PanelItem egwqg5y0"
                           p={0}
                         >
                           <div
-                            className="ref-tag-row css-1jykl04-PanelItem eo8n7lk0"
+                            className="ref-tag-row css-1jykl04-PanelItem egwqg5y0"
                             is={null}
                           >
                             <Box
@@ -961,7 +1056,11 @@ exports[`ProjectTags renders 1`] = `
                                             >
                                               <ForwardRef
                                                 aria-disabled={false}
+<<<<<<< HEAD
                                                 className="css-1uhlusb-StyledButton-getColors e12ma6z0"
+=======
+                                                className="css-dkprmi-StyledButton-getColors e7bsqvz0"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                 data-test-id="delete"
                                                 disabled={false}
                                                 onClick={[Function]}
@@ -970,7 +1069,11 @@ exports[`ProjectTags renders 1`] = `
                                               >
                                                 <button
                                                   aria-disabled={false}
+<<<<<<< HEAD
                                                   className="css-1uhlusb-StyledButton-getColors e12ma6z0"
+=======
+                                                  className="css-dkprmi-StyledButton-getColors e7bsqvz0"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                   data-test-id="delete"
                                                   onClick={[Function]}
                                                   role="button"
@@ -981,24 +1084,40 @@ exports[`ProjectTags renders 1`] = `
                                                     size="xsmall"
                                                   >
                                                     <Component
+<<<<<<< HEAD
                                                       align="center"
                                                       className="css-1bqncjo-ButtonLabel e12ma6z1"
                                                       size="xsmall"
                                                     >
                                                       <span
                                                         className="css-1bqncjo-ButtonLabel e12ma6z1"
+=======
+                                                      className="css-uthd1f-ButtonLabel e7bsqvz1"
+                                                      size="xsmall"
+                                                    >
+                                                      <span
+                                                        className="css-uthd1f-ButtonLabel e7bsqvz1"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                       >
                                                         <Icon
                                                           hasChildren={false}
                                                           size="xsmall"
                                                         >
                                                           <Component
+<<<<<<< HEAD
                                                             className="css-ljhpxy-Icon e12ma6z2"
+=======
+                                                            className="css-ljhpxy-Icon e7bsqvz2"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                             hasChildren={false}
                                                             size="xsmall"
                                                           >
                                                             <span
+<<<<<<< HEAD
                                                               className="css-ljhpxy-Icon e12ma6z2"
+=======
+                                                              className="css-ljhpxy-Icon e7bsqvz2"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                               size="xsmall"
                                                             >
                                                               <StyledInlineSvg
@@ -1006,18 +1125,30 @@ exports[`ProjectTags renders 1`] = `
                                                                 src="icon-trash"
                                                               >
                                                                 <InlineSvg
+<<<<<<< HEAD
                                                                   className="css-1ov3rcq-StyledInlineSvg e12ma6z3"
+=======
+                                                                  className="css-1ov3rcq-StyledInlineSvg e7bsqvz3"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                                   size="12px"
                                                                   src="icon-trash"
                                                                 >
                                                                   <StyledSvg
+<<<<<<< HEAD
                                                                     className="css-1ov3rcq-StyledInlineSvg e12ma6z3"
+=======
+                                                                    className="css-1ov3rcq-StyledInlineSvg e7bsqvz3"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                                     height="12px"
                                                                     viewBox={Object {}}
                                                                     width="12px"
                                                                   >
                                                                     <svg
+<<<<<<< HEAD
                                                                       className="e12ma6z3 css-1jjmnki-StyledSvg-StyledInlineSvg e2idor0"
+=======
+                                                                      className="e7bsqvz3 css-1jjmnki-StyledSvg-StyledInlineSvg ebb48o80"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                                       height="12px"
                                                                       viewBox={Object {}}
                                                                       width="12px"
@@ -1110,11 +1241,11 @@ exports[`ProjectTags renders 1`] = `
                       >
                         <Base
                           align="center"
-                          className="ref-tag-row css-1jykl04-PanelItem eo8n7lk0"
+                          className="ref-tag-row css-1jykl04-PanelItem egwqg5y0"
                           p={0}
                         >
                           <div
-                            className="ref-tag-row css-1jykl04-PanelItem eo8n7lk0"
+                            className="ref-tag-row css-1jykl04-PanelItem egwqg5y0"
                             is={null}
                           >
                             <Box
@@ -1179,6 +1310,7 @@ exports[`ProjectTags renders 1`] = `
                                               onMouseEnter={[Function]}
                                               onMouseLeave={[Function]}
                                             >
+<<<<<<< HEAD
                                               <LinkWithConfirmation
                                                 disabled={true}
                                                 message="Are you sure you want to remove this tag?"
@@ -1194,6 +1326,27 @@ exports[`ProjectTags renders 1`] = `
                                                   onConfirm={[Function]}
                                                   priority="primary"
                                                   stopPropagation={false}
+=======
+                                              <Component
+                                                aria-disabled={true}
+                                                className="css-1ujzp8g-StyledButton-getColors e7bsqvz0"
+                                                data-test-id="delete"
+                                                href={null}
+                                                onClick={[Function]}
+                                                role="button"
+                                                size="xsmall"
+                                                to={null}
+                                              >
+                                                <button
+                                                  aria-disabled={true}
+                                                  className="css-1ujzp8g-StyledButton-getColors e7bsqvz0"
+                                                  data-test-id="delete"
+                                                  href={null}
+                                                  onClick={[Function]}
+                                                  role="button"
+                                                  size="xsmall"
+                                                  to={null}
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                 >
                                                   <a
                                                     className="disabled"
@@ -1201,6 +1354,7 @@ exports[`ProjectTags renders 1`] = `
                                                     onClick={[Function]}
                                                     title="Remove tag?"
                                                   >
+<<<<<<< HEAD
                                                     <Button
                                                       align="center"
                                                       data-test-id="delete"
@@ -1217,6 +1371,14 @@ exports[`ProjectTags renders 1`] = `
                                                         role="button"
                                                         size="xsmall"
                                                         to={null}
+=======
+                                                    <Component
+                                                      className="css-uthd1f-ButtonLabel e7bsqvz1"
+                                                      size="xsmall"
+                                                    >
+                                                      <span
+                                                        className="css-uthd1f-ButtonLabel e7bsqvz1"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                       >
                                                         <ForwardRef
                                                           aria-disabled={true}
@@ -1229,6 +1391,7 @@ exports[`ProjectTags renders 1`] = `
                                                           size="xsmall"
                                                           to={null}
                                                         >
+<<<<<<< HEAD
                                                           <button
                                                             aria-disabled={true}
                                                             className="css-15g9rdf-StyledButton-getColors e12ma6z0"
@@ -1236,11 +1399,21 @@ exports[`ProjectTags renders 1`] = `
                                                             href={null}
                                                             onClick={[Function]}
                                                             role="button"
+=======
+                                                          <Component
+                                                            className="css-ljhpxy-Icon e7bsqvz2"
+                                                            hasChildren={false}
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                             size="xsmall"
                                                             to={null}
                                                           >
+<<<<<<< HEAD
                                                             <ButtonLabel
                                                               align="center"
+=======
+                                                            <span
+                                                              className="css-ljhpxy-Icon e7bsqvz2"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                               size="xsmall"
                                                             >
                                                               <Component
@@ -1248,6 +1421,7 @@ exports[`ProjectTags renders 1`] = `
                                                                 className="css-1bqncjo-ButtonLabel e12ma6z1"
                                                                 size="xsmall"
                                                               >
+<<<<<<< HEAD
                                                                 <span
                                                                   className="css-1bqncjo-ButtonLabel e12ma6z1"
                                                                 >
@@ -1259,6 +1433,24 @@ exports[`ProjectTags renders 1`] = `
                                                                       className="css-ljhpxy-Icon e12ma6z2"
                                                                       hasChildren={false}
                                                                       size="xsmall"
+=======
+                                                                <InlineSvg
+                                                                  className="css-1ov3rcq-StyledInlineSvg e7bsqvz3"
+                                                                  size="12px"
+                                                                  src="icon-trash"
+                                                                >
+                                                                  <StyledSvg
+                                                                    className="css-1ov3rcq-StyledInlineSvg e7bsqvz3"
+                                                                    height="12px"
+                                                                    viewBox={Object {}}
+                                                                    width="12px"
+                                                                  >
+                                                                    <svg
+                                                                      className="e7bsqvz3 css-1jjmnki-StyledSvg-StyledInlineSvg ebb48o80"
+                                                                      height="12px"
+                                                                      viewBox={Object {}}
+                                                                      width="12px"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                                     >
                                                                       <span
                                                                         className="css-ljhpxy-Icon e12ma6z2"
@@ -1378,11 +1570,11 @@ exports[`ProjectTags renders 1`] = `
                       >
                         <Base
                           align="center"
-                          className="ref-tag-row css-1jykl04-PanelItem eo8n7lk0"
+                          className="ref-tag-row css-1jykl04-PanelItem egwqg5y0"
                           p={0}
                         >
                           <div
-                            className="ref-tag-row css-1jykl04-PanelItem eo8n7lk0"
+                            className="ref-tag-row css-1jykl04-PanelItem egwqg5y0"
                             is={null}
                           >
                             <Box
@@ -1446,6 +1638,7 @@ exports[`ProjectTags renders 1`] = `
                                               onMouseEnter={[Function]}
                                               onMouseLeave={[Function]}
                                             >
+<<<<<<< HEAD
                                               <LinkWithConfirmation
                                                 disabled={true}
                                                 message="Are you sure you want to remove this tag?"
@@ -1461,6 +1654,27 @@ exports[`ProjectTags renders 1`] = `
                                                   onConfirm={[Function]}
                                                   priority="primary"
                                                   stopPropagation={false}
+=======
+                                              <Component
+                                                aria-disabled={true}
+                                                className="css-1ujzp8g-StyledButton-getColors e7bsqvz0"
+                                                data-test-id="delete"
+                                                href={null}
+                                                onClick={[Function]}
+                                                role="button"
+                                                size="xsmall"
+                                                to={null}
+                                              >
+                                                <button
+                                                  aria-disabled={true}
+                                                  className="css-1ujzp8g-StyledButton-getColors e7bsqvz0"
+                                                  data-test-id="delete"
+                                                  href={null}
+                                                  onClick={[Function]}
+                                                  role="button"
+                                                  size="xsmall"
+                                                  to={null}
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                 >
                                                   <a
                                                     className="disabled"
@@ -1468,6 +1682,7 @@ exports[`ProjectTags renders 1`] = `
                                                     onClick={[Function]}
                                                     title="Remove tag?"
                                                   >
+<<<<<<< HEAD
                                                     <Button
                                                       align="center"
                                                       data-test-id="delete"
@@ -1484,6 +1699,14 @@ exports[`ProjectTags renders 1`] = `
                                                         role="button"
                                                         size="xsmall"
                                                         to={null}
+=======
+                                                    <Component
+                                                      className="css-uthd1f-ButtonLabel e7bsqvz1"
+                                                      size="xsmall"
+                                                    >
+                                                      <span
+                                                        className="css-uthd1f-ButtonLabel e7bsqvz1"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                       >
                                                         <ForwardRef
                                                           aria-disabled={true}
@@ -1496,6 +1719,7 @@ exports[`ProjectTags renders 1`] = `
                                                           size="xsmall"
                                                           to={null}
                                                         >
+<<<<<<< HEAD
                                                           <button
                                                             aria-disabled={true}
                                                             className="css-15g9rdf-StyledButton-getColors e12ma6z0"
@@ -1503,11 +1727,21 @@ exports[`ProjectTags renders 1`] = `
                                                             href={null}
                                                             onClick={[Function]}
                                                             role="button"
+=======
+                                                          <Component
+                                                            className="css-ljhpxy-Icon e7bsqvz2"
+                                                            hasChildren={false}
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                             size="xsmall"
                                                             to={null}
                                                           >
+<<<<<<< HEAD
                                                             <ButtonLabel
                                                               align="center"
+=======
+                                                            <span
+                                                              className="css-ljhpxy-Icon e7bsqvz2"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                               size="xsmall"
                                                             >
                                                               <Component
@@ -1515,6 +1749,7 @@ exports[`ProjectTags renders 1`] = `
                                                                 className="css-1bqncjo-ButtonLabel e12ma6z1"
                                                                 size="xsmall"
                                                               >
+<<<<<<< HEAD
                                                                 <span
                                                                   className="css-1bqncjo-ButtonLabel e12ma6z1"
                                                                 >
@@ -1526,6 +1761,24 @@ exports[`ProjectTags renders 1`] = `
                                                                       className="css-ljhpxy-Icon e12ma6z2"
                                                                       hasChildren={false}
                                                                       size="xsmall"
+=======
+                                                                <InlineSvg
+                                                                  className="css-1ov3rcq-StyledInlineSvg e7bsqvz3"
+                                                                  size="12px"
+                                                                  src="icon-trash"
+                                                                >
+                                                                  <StyledSvg
+                                                                    className="css-1ov3rcq-StyledInlineSvg e7bsqvz3"
+                                                                    height="12px"
+                                                                    viewBox={Object {}}
+                                                                    width="12px"
+                                                                  >
+                                                                    <svg
+                                                                      className="e7bsqvz3 css-1jjmnki-StyledSvg-StyledInlineSvg ebb48o80"
+                                                                      height="12px"
+                                                                      viewBox={Object {}}
+                                                                      width="12px"
+>>>>>>> build(travis): yarn --pnp [WIP]
                                                                     >
                                                                       <span
                                                                         className="css-ljhpxy-Icon e12ma6z2"

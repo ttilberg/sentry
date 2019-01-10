@@ -12,6 +12,7 @@ const OptimizeCssAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 const LodashModuleReplacementPlugin = require('lodash-webpack-plugin');
 const FixStyleOnlyEntriesPlugin = require('webpack-fix-style-only-entries');
 const CopyPlugin = require('copy-webpack-plugin');
+const PnpWebpackPlugin = require(`pnp-webpack-plugin`);
 
 const {env} = process;
 const IS_PRODUCTION = env.NODE_ENV === 'production';
@@ -282,12 +283,15 @@ const appConfig = {
   ],
   resolve: {
     alias: {
-      app: path.join(staticPrefix, 'app'),
       'app-test': path.join(__dirname, 'tests', 'js'),
       'sentry-locale': path.join(__dirname, 'src', 'sentry', 'locale'),
     },
     modules: ['node_modules'],
     extensions: ['.jsx', '.js', '.json', '.ts', '.tsx'],
+    plugins: [PnpWebpackPlugin],
+  },
+  resolveLoader: {
+    plugins: [PnpWebpackPlugin.moduleLoader(module)],
   },
   output: {
     path: distPath,
@@ -338,6 +342,9 @@ const legacyCssConfig = {
   resolve: {
     extensions: ['.less', '.js'],
     modules: [staticPrefix, 'node_modules'],
+  },
+  resolveLoader: {
+    plugins: [PnpWebpackPlugin.moduleLoader(module)],
   },
   module: {
     rules: [
