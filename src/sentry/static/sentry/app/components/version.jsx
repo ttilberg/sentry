@@ -48,7 +48,11 @@ class Version extends React.Component {
       );
     }
 
-    return <span title={version}>{versionTitle}</span>;
+    return (
+      <span title={version} className={className}>
+        {versionTitle}
+      </span>
+    );
   }
 }
 
