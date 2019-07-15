@@ -320,5 +320,19 @@ describe('Feature', function() {
         features: ['org-bazar'],
       });
     });
+
+    it('does not check HookStore when noHookStore is passed', function() {
+      const noFeatureRenderer = jest.fn(() => null);
+      const wrapper = mount(
+        <Feature features={['org-baz']} renderDisabled={noFeatureRenderer} noHookStore>
+          <div>The Child</div>
+        </Feature>,
+        routerContext
+      );
+
+      expect(wrapper.find('Feature div')).toHaveLength(0);
+      expect(hookFn).not.toHaveBeenCalled();
+      expect(noFeatureRenderer).toHaveBeenCalled();
+    });
   });
 });

@@ -65,6 +65,11 @@ class Feature extends React.Component {
     renderDisabled: PropTypes.oneOfType([PropTypes.func, PropTypes.bool]),
 
     /**
+     * Completely disable hookstore lookups
+     */
+    noHookStore: PropTypes.bool,
+
+    /**
      * Specify the key to use for hookstore functionality.
      *
      * The hookstore key that will be checked is:
@@ -141,6 +146,7 @@ class Feature extends React.Component {
       features,
       renderDisabled,
       hookName,
+      noHookStore,
       organization,
       project,
       requireAll,
@@ -161,7 +167,10 @@ class Feature extends React.Component {
 
     // Override the renderDisabled function with a hook store function if there
     // is one registered for the feature.
-    if (hookName || (renderDisabled !== false && features.length === 1)) {
+    if (
+      !noHookStore &&
+      (hookName || (renderDisabled !== false && features.length === 1))
+    ) {
       const hookKey = hookName || descopeFeatureName(features[0]);
       const hooks = HookStore.get(`feature-disabled:${hookKey}`);
 
