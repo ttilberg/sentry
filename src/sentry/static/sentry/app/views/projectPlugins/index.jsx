@@ -17,18 +17,18 @@ class ProjectPluginsContainer extends React.Component {
     this.fetchData();
   }
 
-  fetchData() {
+  fetchData = () => {
     fetchPlugins(this.props.params);
-  }
+  };
 
   handleChange = (pluginId, shouldEnable) => {
-    let {projectId, orgId} = this.props.params;
-    let actionCreator = shouldEnable ? enablePlugin : disablePlugin;
+    const {projectId, orgId} = this.props.params;
+    const actionCreator = shouldEnable ? enablePlugin : disablePlugin;
     actionCreator({projectId, orgId, pluginId});
   };
 
   render() {
-    let {loading, error, plugins} = this.props.plugins || {};
+    const {loading, error, plugins} = this.props.plugins || {};
 
     return (
       <React.Fragment>

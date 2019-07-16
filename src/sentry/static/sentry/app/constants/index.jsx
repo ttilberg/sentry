@@ -111,7 +111,7 @@ export const DEFAULT_FUSE_OPTIONS = {
   location: 0,
   distance: 75,
   maxPatternLength: 24,
-  minMatchCharLength: 1,
+  minMatchCharLength: 2,
   // tokenize: true,
   // findAllMatches: true,
 };
@@ -126,6 +126,8 @@ export const AVATAR_URL_MAP = {
 
 export const MENU_CLOSE_DELAY = 200;
 
+export const MAX_PICKABLE_DAYS = 90;
+
 export const DEFAULT_STATS_PERIOD = '14d';
 
 export const DEFAULT_USE_UTC = true;
@@ -135,8 +137,31 @@ export const DEFAULT_RELATIVE_PERIODS = {
   '7d': t('Last 7 days'),
   '14d': t('Last 14 days'),
   '30d': t('Last 30 days'),
+  '90d': t('Last 90 days'),
 };
 
 // Special Search characters
 export const NEGATION_OPERATOR = '!';
 export const SEARCH_WILDCARD = '*';
+
+// Algolia documentation searchl
+export const ALGOLIA_APP_ID = 'OOK48W9UCL';
+export const ALGOLIA_READ_ONLY = '2d64ec1106519cbc672d863b0d200782';
+export const ALGOLIA_DOCS_INDEX = 'sentry-docs';
+export const ALGOLIA_ZENDESK_INDEX = 'zendesk_sentry_articles';
+
+export const SEARCH_TYPES = {
+  ISSUE: 0,
+  EVENT: 1,
+};
+export const MAX_RECENT_SEARCHES = 3;
+
+export const DEFAULT_PER_PAGE = 50;
+
+// Webpack configures DEPLOY_PREVIEW_CONFIG for deploy preview builds.
+// eslint-disable-next-line no-undef
+export const DEPLOY_PREVIEW_CONFIG = process.env.DEPLOY_PREVIEW_CONFIG;
+
+// Webpack configures EXPERIMENTAL_SPA.
+// eslint-disable-next-line no-undef
+export const EXPERIMENTAL_SPA = process.env.EXPERIMENTAL_SPA;

@@ -9,7 +9,6 @@ import SentryTypes from 'app/sentryTypes';
 
 class EventExtraData extends React.Component {
   static propTypes = {
-    group: SentryTypes.Group.isRequired,
     event: SentryTypes.Event.isRequired,
   };
 
@@ -31,11 +30,10 @@ class EventExtraData extends React.Component {
   };
 
   render() {
-    let extraDataArray = objectToArray(this.props.event.context);
+    const extraDataArray = objectToArray(this.props.event.context);
     return (
       <div className="extra-data">
         <EventDataSection
-          group={this.props.group}
           event={this.props.event}
           type="extra"
           title={t('Additional Data')}

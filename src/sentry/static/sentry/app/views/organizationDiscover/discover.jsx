@@ -7,9 +7,8 @@ import {addErrorMessage, addSuccessMessage} from 'app/actionCreators/indicator';
 import {getUtcDateString} from 'app/utils/dates';
 import {t, tct} from 'app/locale';
 import {updateProjects, updateDateTime} from 'app/actionCreators/globalSelection';
-import BetaTag from 'app/components/betaTag';
-import SentryTypes from 'app/sentryTypes';
 import PageHeading from 'app/components/pageHeading';
+import SentryTypes from 'app/sentryTypes';
 
 import {
   DiscoverContainer,
@@ -26,6 +25,7 @@ import {
   getQueryFromQueryString,
   deleteSavedQuery,
   updateSavedQuery,
+  queryHasChanged,
 } from './utils';
 import {isValidAggregation} from './aggregations/utils';
 import {isValidCondition} from './conditions/utils';
@@ -42,6 +42,7 @@ import createResultManager from './resultManager';
 export default class OrganizationDiscover extends React.Component {
   static propTypes = {
     organization: SentryTypes.Organization.isRequired,
+    location: PropTypes.object.isRequired,
     queryBuilder: PropTypes.object.isRequired,
     // savedQuery and isEditingSavedQuery are provided if it's a saved query
     savedQuery: SentryTypes.DiscoverSavedQuery,
@@ -50,6 +51,11 @@ export default class OrganizationDiscover extends React.Component {
     view: PropTypes.oneOf(['query', 'saved']),
     toggleEditMode: PropTypes.func.isRequired,
     isLoading: PropTypes.bool.isRequired,
+    utc: PropTypes.bool,
+  };
+
+  static defaultProps = {
+    utc: true,
   };
 
   constructor(props) {
@@ -65,12 +71,6 @@ export default class OrganizationDiscover extends React.Component {
     };
   }
 
-  componentDidMount() {
-    if (this.props.savedQuery) {
-      this.runQuery();
-    }
-  }
-
   componentWillReceiveProps(nextProps) {
     const {
       queryBuilder,
@@ -78,9 +78,16 @@ export default class OrganizationDiscover extends React.Component {
       savedQuery,
       isEditingSavedQuery,
       params,
+      isLoading,
     } = nextProps;
-    const currentSearch = this.props.location.search;
     const {resultManager} = this.state;
+
+    // Run query on isLoading change if there is a querystring or saved search
+    const loadingStatusChanged = isLoading !== this.props.isLoading;
+    if (loadingStatusChanged && (savedQuery || !!search)) {
+      this.runQuery();
+      return;
+    }
 
     if (savedQuery && savedQuery !== this.props.savedQuery) {
       this.setState({view: 'saved'});
@@ -92,7 +99,7 @@ export default class OrganizationDiscover extends React.Component {
       return;
     }
 
-    if (currentSearch === search) {
+    if (!queryHasChanged(this.props.location.search, nextProps.location.search)) {
       return;
     }
 
@@ -107,26 +114,28 @@ export default class OrganizationDiscover extends React.Component {
     } else if (search) {
       // This indicates navigation changes (e.g. back button on browser)
       // We need to update our search store and probably runQuery
-      const {projects, range, start, end} = newQuery;
-      let hasChange = false;
+      const {projects, range, start, end, utc} = newQuery;
 
       if (projects) {
         this.updateProjects(projects);
-        hasChange = true;
       }
 
-      if (range || (end && start)) {
-        this.updateDateTime({
-          period: range || null,
-          start: start || null,
-          end: end || null,
-        });
-        hasChange = true;
-      }
+      this.updateDateTime({
+        period: range || null,
+        start: start || null,
+        end: end || null,
+        utc: typeof utc !== 'undefined' ? utc : null,
+      });
 
-      if (hasChange) {
-        this.runQuery();
-      }
+      // These props come from URL string, so will always be in UTC
+      updateDateTime({
+        start: (start && new Date(moment.utc(start).local())) || null,
+        end: (end && new Date(moment.utc(end).local())) || null,
+        period: range || null,
+        utc: typeof utc !== 'undefined' ? utc : null,
+      });
+
+      this.runQuery();
     }
   }
 
@@ -135,8 +144,9 @@ export default class OrganizationDiscover extends React.Component {
     updateProjects(val);
   };
 
-  getDateTimeFields = ({period, start, end}) => ({
+  getDateTimeFields = ({period, start, end, utc}) => ({
     range: period || null,
+    utc: typeof utc !== 'undefined' ? utc : null,
     start: (start && getUtcDateString(start)) || null,
     end: (end && getUtcDateString(end)) || null,
   });
@@ -146,16 +156,18 @@ export default class OrganizationDiscover extends React.Component {
   };
 
   updateDateTime = datetime => {
-    const {start, end, range} = this.getDateTimeFields(datetime);
+    const {start, end, range, utc} = this.getDateTimeFields(datetime);
 
-    this.updateFields({start, end, range});
     updateDateTime({
       start,
       end,
       period: range,
+      utc,
     });
+    this.updateFields({start, end, range, utc});
   };
 
+  // Called when global selection header changes dates
   updateDateTimeAndRun = datetime => {
     this.updateDateTime(datetime);
     this.runQuery();
@@ -178,7 +190,7 @@ export default class OrganizationDiscover extends React.Component {
   };
 
   runQuery = () => {
-    const {queryBuilder, organization} = this.props;
+    const {queryBuilder, organization, location} = this.props;
     const {resultManager} = this.state;
 
     // Track query for analytics
@@ -212,7 +224,16 @@ export default class OrganizationDiscover extends React.Component {
         if (shouldRedirect) {
           browserHistory.push({
             pathname: `/organizations/${organization.slug}/discover/`,
-            search: getQueryStringFromQuery(queryBuilder.getInternal()),
+            // This is kind of a hack, but this causes a re-render in result where this.props === nextProps after
+            // a query has completed... we don't preserve `state` when we update browser history, so
+            // if this is present in `Result.shouldComponentUpdate` then should perform a render
+            state: 'fetching',
+            // Don't drop "visualization" from querystring
+            search: getQueryStringFromQuery(queryBuilder.getInternal(), {
+              ...(location.query.visualization && {
+                visualization: location.query.visualization,
+              }),
+            }),
           });
         }
 
@@ -339,6 +360,8 @@ export default class OrganizationDiscover extends React.Component {
       savedQuery,
       toggleEditMode,
       isLoading,
+      location,
+      utc,
     } = this.props;
 
     const currentQuery = queryBuilder.getInternal();
@@ -346,10 +369,17 @@ export default class OrganizationDiscover extends React.Component {
     const shouldDisplayResult = resultManager.shouldDisplayResult();
 
     const start =
-      (currentQuery.start && moment.utc(currentQuery.start).toDate()) ||
+      (currentQuery.start &&
+        moment(currentQuery.start)
+          .local()
+          .toDate()) ||
       currentQuery.start;
     const end =
-      (currentQuery.end && moment.utc(currentQuery.end).toDate()) || currentQuery.end;
+      (currentQuery.end &&
+        moment(currentQuery.end)
+          .local()
+          .toDate()) ||
+      currentQuery.end;
 
     return (
       <DiscoverContainer>
@@ -371,32 +401,31 @@ export default class OrganizationDiscover extends React.Component {
               isLoading={isLoading}
             />
           )}
-          {isEditingSavedQuery &&
-            savedQuery && (
-              <QueryPanel title={t('Edit Query')} onClose={toggleEditMode}>
-                <EditSavedQuery
-                  savedQuery={savedQuery}
-                  queryBuilder={queryBuilder}
-                  isFetchingQuery={isFetchingQuery}
-                  onUpdateField={this.updateField}
-                  onRunQuery={this.runQuery}
-                  onReset={this.reset}
-                  onDeleteQuery={this.deleteSavedQuery}
-                  onSaveQuery={this.updateSavedQuery}
-                  isLoading={isLoading}
-                />
-              </QueryPanel>
-            )}
+          {isEditingSavedQuery && savedQuery && (
+            <QueryPanel title={t('Edit Query')} onClose={toggleEditMode}>
+              <EditSavedQuery
+                savedQuery={savedQuery}
+                queryBuilder={queryBuilder}
+                isFetchingQuery={isFetchingQuery}
+                onUpdateField={this.updateField}
+                onRunQuery={this.runQuery}
+                onReset={this.reset}
+                onDeleteQuery={this.deleteSavedQuery}
+                onSaveQuery={this.updateSavedQuery}
+                isLoading={isLoading}
+              />
+            </QueryPanel>
+          )}
         </Sidebar>
 
         <DiscoverGlobalSelectionHeader
           organization={organization}
-          project={currentQuery.projects}
+          projects={currentQuery.projects}
           hasCustomRouting={true}
           relative={currentQuery.range}
           start={start}
           end={end}
-          utc={true}
+          utc={utc}
           showEnvironmentSelector={false}
           onChangeProjects={this.updateProjects}
           onUpdateProjects={this.runQuery}
@@ -408,6 +437,8 @@ export default class OrganizationDiscover extends React.Component {
           <BodyContent>
             {shouldDisplayResult && (
               <Result
+                location={location}
+                utc={utc}
                 data={data}
                 savedQuery={savedQuery}
                 onToggleEdit={toggleEditMode}
@@ -418,9 +449,7 @@ export default class OrganizationDiscover extends React.Component {
               <React.Fragment>
                 <div>
                   <HeadingContainer>
-                    <PageHeading>
-                      {t('Discover')} <BetaTag />
-                    </PageHeading>
+                    <PageHeading>{t('Discover')}</PageHeading>
                   </HeadingContainer>
                 </div>
                 <Intro updateQuery={this.updateAndRunQuery} />

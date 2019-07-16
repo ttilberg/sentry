@@ -22,7 +22,7 @@ const GroupCheckBox = createReactClass({
   },
 
   componentWillReceiveProps(nextProps) {
-    if (nextProps.id != this.props.id) {
+    if (nextProps.id !== this.props.id) {
       this.setState({
         isSelected: SelectedGroupStore.isSelected(nextProps.id),
       });
@@ -34,7 +34,7 @@ const GroupCheckBox = createReactClass({
   },
 
   onSelectedGroupChange() {
-    let isSelected = SelectedGroupStore.isSelected(this.props.id);
+    const isSelected = SelectedGroupStore.isSelected(this.props.id);
     if (isSelected !== this.state.isSelected) {
       this.setState({
         isSelected,
@@ -43,7 +43,7 @@ const GroupCheckBox = createReactClass({
   },
 
   onSelect() {
-    let id = this.props.id;
+    const id = this.props.id;
     SelectedGroupStore.toggleSelect(id);
   },
 

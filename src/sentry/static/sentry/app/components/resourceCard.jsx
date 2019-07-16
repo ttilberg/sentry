@@ -3,31 +3,29 @@ import PropTypes from 'prop-types';
 import styled from 'react-emotion';
 
 import {analytics} from 'app/utils/analytics';
-import ConfigStore from 'app/stores/configStore';
-import ExternalLink from 'app/components/externalLink';
+import ExternalLink from 'app/components/links/externalLink';
 import {Panel} from 'app/components/panels';
 
 export default class ResourceCard extends React.Component {
   static propTypes = {
     title: PropTypes.string.isRequired,
     link: PropTypes.string.isRequired,
-    imgUrl: PropTypes.string.isRequired,
+    imgUrl: PropTypes.oneOfType([PropTypes.string, PropTypes.object]).isRequired,
   };
 
   recordClick = () => {
-    let {link, title} = this.props;
+    const {link, title} = this.props;
     analytics('orgdash.resource_clicked', {link, title});
   };
 
   render() {
-    const mediaUrl = ConfigStore.get('mediaUrl');
-    let {title, link, imgUrl} = this.props;
+    const {title, link, imgUrl} = this.props;
 
     return (
       <ResourceCardWrapper onClick={this.recordClick}>
         <StyledLink href={link}>
           <div className="m-b-1">
-            <img src={mediaUrl + imgUrl} alt={title} />
+            <img src={imgUrl} alt={title} />
           </div>
           <StyledTitle>{title}</StyledTitle>
         </StyledLink>

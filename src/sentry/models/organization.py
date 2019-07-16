@@ -138,6 +138,9 @@ class Organization(Model):
             ), (
                 'require_2fa',
                 'Require and enforce two-factor authentication for all members.'
+            ), (
+                'disable_new_visibility_features',
+                'Temporarily opt out of new visibility features and ui',
             ),
         ),
         default=1
@@ -156,6 +159,10 @@ class Organization(Model):
         """
         Return the organization used in single organization mode.
         """
+
+        if settings.SENTRY_ORGANIZATION is not None:
+            return cls.objects.get(id=settings.SENTRY_ORGANIZATION)
+
         return cls.objects.filter(
             status=OrganizationStatus.ACTIVE,
         )[0]
@@ -438,3 +445,9 @@ class Organization(Model):
             actor_key_id=api_key_id,
             ip_address=ip_address
         )
+
+    def get_url_viewname(self):
+        return 'sentry-organization-issue-list'
+
+    def get_url(self):
+        return reverse(self.get_url_viewname(), args=[self.slug])

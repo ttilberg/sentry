@@ -4,6 +4,7 @@ import datetime
 import jwt
 import re
 import json
+import logging
 from hashlib import md5 as _md5
 from six.moves.urllib.parse import parse_qs, urlparse, urlsplit
 
@@ -15,6 +16,7 @@ from sentry.integrations.exceptions import ApiError
 from sentry.integrations.client import ApiClient
 from sentry.utils.http import absolute_uri
 
+logger = logging.getLogger('sentry.integrations.jira')
 
 JIRA_KEY = '%s.jira' % (urlparse(absolute_uri()).hostname, )
 ISSUE_KEY_RE = re.compile(r'^[A-Za-z][A-Za-z0-9]*-\d+$')
@@ -65,9 +67,16 @@ class JiraCloud(object):
             params=params))
         return request_spec
 
+    def user_id_field(self):
+        """
+        Jira-Cloud requires GDPR compliant API usage so we have to use accountId
+        """
+        return 'accountId'
+
 
 class JiraApiClient(ApiClient):
-    COMMENT_URL = '/rest/api/2/issue/%s/comment'
+    COMMENTS_URL = '/rest/api/2/issue/%s/comment'
+    COMMENT_URL = '/rest/api/2/issue/%s/comment/%s'
     STATUS_URL = '/rest/api/2/status'
     CREATE_URL = '/rest/api/2/issue'
     ISSUE_URL = '/rest/api/2/issue/%s'
@@ -80,6 +89,8 @@ class JiraApiClient(ApiClient):
     SERVER_INFO_URL = '/rest/api/2/serverInfo'
     ASSIGN_URL = '/rest/api/2/issue/%s/assignee'
     TRANSITION_URL = '/rest/api/2/issue/%s/transitions'
+
+    integration_name = 'jira'
 
     def __init__(self, base_url, jira_style, verify_ssl):
         self.base_url = base_url
@@ -95,7 +106,17 @@ class JiraApiClient(ApiClient):
         add authentication data and transform parameters.
         """
         request_spec = self.jira_style.request_hook(method, path, data, params, **kwargs)
+        if 'headers' not in request_spec:
+            request_spec['headers'] = {}
+
+        # Force adherence to the GDPR compliant API conventions.
+        # See
+        # https://developer.atlassian.com/cloud/jira/platform/deprecation-notice-user-privacy-api-migration-guide
+        request_spec['headers']['x-atlassian-force-account-id'] = 'true'
         return self._request(**request_spec)
+
+    def user_id_field(self):
+        return self.jira_style.user_id_field()
 
     def get_cached(self, url, params=None):
         """
@@ -126,7 +147,10 @@ class JiraApiClient(ApiClient):
         return self.get(self.SEARCH_URL, params={'jql': jql})
 
     def create_comment(self, issue_key, comment):
-        return self.post(self.COMMENT_URL % issue_key, data={'body': comment})
+        return self.post(self.COMMENTS_URL % issue_key, data={'body': comment})
+
+    def update_comment(self, issue_key, comment_id, comment):
+        return self.put(self.COMMENT_URL % (issue_key, comment_id), data={'body': comment})
 
     def get_projects_list(self):
         return self.get_cached(self.PROJECT_URL)
@@ -140,28 +164,34 @@ class JiraApiClient(ApiClient):
                 return project['key'].encode('utf-8')
         return ''
 
-    def get_create_meta(self, project=None):
-        params = {'expand': 'projects.issuetypes.fields'}
-        if project is not None:
-            params['projectIds'] = project
-        return self.get_cached(
+    def get_create_meta_for_project(self, project):
+        params = {
+            'expand': 'projects.issuetypes.fields',
+            'projectIds': project
+        }
+        metas = self.get_cached(
             self.META_URL,
             params=params,
         )
-
-    def get_create_meta_for_project(self, project):
-        metas = self.get_create_meta(project)
         # We saw an empty JSON response come back from the API :(
         if not metas:
+            logger.info('jira.get-create-meta.empty-response', extra={
+                'base_url': self.base_url,
+                'project': project,
+            })
             return None
 
         # XXX(dcramer): document how this is possible, if it even is
         if len(metas['projects']) > 1:
-            raise ApiError('More than one project found.')
+            raise ApiError(u'More than one project found matching {}.'.format(project))
 
         try:
             return metas['projects'][0]
         except IndexError:
+            logger.info('jira.get-create-meta.key-error', extra={
+                'base_url': self.base_url,
+                'project': project,
+            })
             return None
 
     def get_versions(self, project):
@@ -177,18 +207,17 @@ class JiraApiClient(ApiClient):
 
     def search_users_for_project(self, project, username):
         # Jira Server wants a project key, while cloud is indifferent.
+        # Use the query parameter as our implemention follows jira's gdpr practices
         project_key = self.get_project_key_for_id(project)
         return self.get_cached(
             self.USERS_URL,
-            params={'project': project_key, 'username': username})
+            params={'project': project_key, 'query': username})
 
     def search_users_for_issue(self, issue_key, email):
-        # not actully in the official documentation, but apparently
-        # you can pass email as the username param see:
-        # https://community.atlassian.com/t5/Answers-Developer-Questions/JIRA-Rest-API-find-JIRA-user-based-on-user-s-email-address/qaq-p/532715
+        # Use the query parameter as our implemention follows jira's gdpr practices
         return self.get_cached(
             self.USERS_URL,
-            params={'issueKey': issue_key, 'username': email})
+            params={'issueKey': issue_key, 'query': email})
 
     def create_issue(self, raw_form_data):
         data = {'fields': raw_form_data}
@@ -208,5 +237,6 @@ class JiraApiClient(ApiClient):
             'transition': {'id': transition_id},
         })
 
-    def assign_issue(self, key, username):
-        return self.put(self.ASSIGN_URL % key, data={'name': username})
+    def assign_issue(self, key, name_or_account_id):
+        user_id_field = self.user_id_field()
+        return self.put(self.ASSIGN_URL % key, data={user_id_field: name_or_account_id})

@@ -1,13 +1,15 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import {Flex} from 'grid-emotion';
 import {browserHistory} from 'react-router';
 import DocumentTitle from 'react-document-title';
-import jQuery from 'jquery';
-import SentryTypes from 'app/sentryTypes';
 
+import {getUserTimezone, getUtcToLocalDateObject} from 'app/utils/dates';
+import {t} from 'app/locale';
 import {updateProjects, updateDateTime} from 'app/actionCreators/globalSelection';
 import withGlobalSelection from 'app/utils/withGlobalSelection';
+import Feature from 'app/components/acl/feature';
+import Alert from 'app/components/alert';
+import SentryTypes from 'app/sentryTypes';
 
 import Discover from './discover';
 import createQueryBuilder from './queryBuilder';
@@ -43,6 +45,7 @@ class OrganizationDiscoverContainer extends React.Component {
     const {organization} = context;
 
     const query = getQueryFromQueryString(search);
+
     if (query.hasOwnProperty('projects')) {
       // Update global store with projects from querystring
       updateProjects(query.projects);
@@ -53,30 +56,38 @@ class OrganizationDiscoverContainer extends React.Component {
 
     if (['range', 'start', 'end'].some(key => query.hasOwnProperty(key))) {
       // Update global store with datetime from querystring
+      const timezone = getUserTimezone();
+
+      // start/end will always be in UTC, however we need to coerce into
+      // system time for date picker to be able to synced.
       updateDateTime({
-        start: query.start || null,
-        end: query.end || null,
+        start: (query.start && getUtcToLocalDateObject(query.start)) || null,
+        end: (query.end && getUtcToLocalDateObject(query.end)) || null,
         period: query.range || null,
+        utc: query.utc || timezone === 'UTC',
       });
     } else {
-      // Update query with global projects
+      // Update query with global datetime values
       query.start = props.selection.datetime.start;
       query.end = props.selection.datetime.end;
       query.range = props.selection.datetime.period;
+      query.utc = props.selection.datetime.utc;
     }
 
     this.queryBuilder = createQueryBuilder(query, organization);
   }
 
   componentDidMount() {
-    jQuery(document.body).addClass('body-discover');
+    document.body.classList.add('body-discover');
 
     const {savedQueryId} = this.props.params;
 
     if (savedQueryId) {
-      this.fetchSavedQuery(savedQueryId).then(this.loadTags);
+      this.loadTags()
+        .then(() => this.fetchSavedQuery(savedQueryId))
+        .then(this.setLoadedState);
     } else {
-      this.loadTags();
+      this.loadTags().then(this.setLoadedState);
     }
   }
 
@@ -85,8 +96,9 @@ class OrganizationDiscoverContainer extends React.Component {
       this.setState({savedQuery: null});
       // Reset querybuilder if we're switching from a saved query
       if (this.props.params.savedQueryId) {
-        const projects = nextProps.selection.projects;
-        this.queryBuilder.reset({projects});
+        const {datetime, projects} = nextProps.selection;
+        const {start, end, period: range} = datetime;
+        this.queryBuilder.reset({projects, range, start, end});
       }
       return;
     }
@@ -101,13 +113,16 @@ class OrganizationDiscoverContainer extends React.Component {
   }
 
   componentWillUnmount() {
-    jQuery(document.body).removeClass('body-discover');
+    this.queryBuilder.cancelRequests();
+    document.body.classList.remove('body-discover');
   }
 
   loadTags = () => {
-    this.queryBuilder.load().then(() => {
-      this.setState({isLoading: false});
-    });
+    return this.queryBuilder.load();
+  };
+
+  setLoadedState = () => {
+    this.setState({isLoading: false});
   };
 
   fetchSavedQuery = savedQueryId => {
@@ -154,40 +169,41 @@ class OrganizationDiscoverContainer extends React.Component {
     });
   };
 
-  renderComingSoon() {
-    return (
-      <Flex className="organization-home" justify="center" align="center">
-        something is happening here soon :)
-      </Flex>
-    );
+  renderNoAccess() {
+    return <Alert type="warning">{t("You don't have access to this feature")}</Alert>;
   }
 
   render() {
     const {isLoading, savedQuery, view} = this.state;
 
-    const {location, params} = this.props;
+    const {location, params, selection} = this.props;
 
     const {organization} = this.context;
-    const hasFeature = new Set(organization.features).has('discover');
-
-    if (!hasFeature) return this.renderComingSoon();
 
     return (
       <DocumentTitle title={`Discover - ${organization.slug} - Sentry`}>
-        <DiscoverWrapper>
-          <Discover
-            isLoading={isLoading}
-            organization={organization}
-            queryBuilder={this.queryBuilder}
-            location={location}
-            params={params}
-            savedQuery={savedQuery}
-            isEditingSavedQuery={this.props.location.query.editing === 'true'}
-            updateSavedQueryData={this.updateSavedQuery}
-            view={view}
-            toggleEditMode={this.toggleEditMode}
-          />
-        </DiscoverWrapper>
+        <Feature
+          features={['organizations:discover']}
+          hookName="discover-page"
+          organization={organization}
+          renderDisabled={this.renderNoAccess}
+        >
+          <DiscoverWrapper>
+            <Discover
+              utc={selection.datetime.utc}
+              isLoading={isLoading}
+              organization={organization}
+              queryBuilder={this.queryBuilder}
+              location={location}
+              params={params}
+              savedQuery={savedQuery}
+              isEditingSavedQuery={this.props.location.query.editing === 'true'}
+              updateSavedQueryData={this.updateSavedQuery}
+              view={view}
+              toggleEditMode={this.toggleEditMode}
+            />
+          </DiscoverWrapper>
+        </Feature>
       </DocumentTitle>
     );
   }

@@ -1,6 +1,7 @@
 import {
   getQueryFromQueryString,
   getQueryStringFromQuery,
+  queryHasChanged,
   getOrderbyFields,
   parseSavedQuery,
   generateQueryName,
@@ -44,14 +45,29 @@ describe('getQueryStringFromQuery()', function() {
   it('parses query from query string', function() {
     expect(getQueryStringFromQuery(query)).toEqual(queryString);
   });
+
+  it('keeps location in query string if provided', function() {
+    expect(getQueryStringFromQuery(query, {visualization: 'table'})).toEqual(
+      `${queryString}&visualization=table`
+    );
+  });
+});
+
+describe('queryHasChanged()', function() {
+  it('checks only query fields', function() {
+    const prev = '?fields=%5B"id"%5D&editing=true';
+    const next = '?fields=%5B"id"%5D';
+
+    expect(queryHasChanged(prev, next)).toBe(false);
+  });
 });
 
 describe('getOrderbyFields()', function() {
   const organization = TestStubs.Organization({projects: [TestStubs.Project()]});
   const queryBuilder = createQueryBuilder({}, organization);
 
-  it('allows ordering by all fields when no aggregations except project.name and issue.id', function() {
-    expect(getOrderbyFields(queryBuilder)).toHaveLength(COLUMNS.length - 2);
+  it('allows ordering by all fields when no aggregations except project.name', function() {
+    expect(getOrderbyFields(queryBuilder)).toHaveLength(COLUMNS.length - 1);
   });
 
   it('allows ordering by aggregations with aggregations and no fields', function() {
@@ -76,7 +92,7 @@ describe('getOrderbyFields()', function() {
   });
 });
 
-describe('parseSavedQuery', function() {
+describe('parseSavedQuery()', function() {
   it('strips metadata', function() {
     const queryFromApi = {
       id: '1',
@@ -98,7 +114,7 @@ describe('parseSavedQuery', function() {
   });
 });
 
-describe('generateQueryName', function() {
+describe('generateQueryName()', function() {
   it('generates name', function() {
     expect(generateQueryName()).toBe('Result - Oct 17 02:41:20');
   });

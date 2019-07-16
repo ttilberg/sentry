@@ -26,6 +26,7 @@ from sentry.utils import db
 
 from . import models
 from sentry.tagstore.types import TagKey, TagValue, GroupTagKey, GroupTagValue
+from sentry.tasks.post_process import index_event_tags
 
 
 transformers = {
@@ -298,7 +299,10 @@ class LegacyTagStorage(TagStorage):
 
         return transformers[models.TagKey](instance)
 
-    def get_tag_keys(self, project_id, environment_id, status=TagKeyStatus.VISIBLE):
+    def get_tag_keys(
+        self, project_id, environment_id, status=TagKeyStatus.VISIBLE,
+        include_values_seen=False,
+    ):
         qs = models.TagKey.objects.filter(project_id=project_id)
 
         if status is not None:
@@ -341,7 +345,7 @@ class LegacyTagStorage(TagStorage):
 
         return transformers[models.GroupTagKey](instance)
 
-    def get_group_tag_keys(self, project_id, group_id, environment_id, limit=None, keys=None):
+    def get_group_tag_keys(self, project_id, group_id, environment_ids, limit=None, keys=None):
         qs = models.GroupTagKey.objects.filter(group_id=group_id)
 
         if keys is not None:
@@ -442,7 +446,7 @@ class LegacyTagStorage(TagStorage):
                     },
                     extra=extra)
 
-    def get_group_event_filter(self, project_id, group_id, environment_id, tags):
+    def get_group_event_filter(self, project_id, group_id, environment_ids, tags, start, end):
         tagkeys = dict(
             models.TagKey.objects.filter(
                 project_id=project_id,
@@ -498,7 +502,7 @@ class LegacyTagStorage(TagStorage):
 
         return {'id__in': set(matches)}
 
-    def get_groups_user_counts(self, project_ids, group_ids, environment_ids):
+    def get_groups_user_counts(self, project_ids, group_ids, environment_ids, start=None, end=None):
         # only the snuba backend supports multi project
         if len(project_ids) > 1:
             raise NotImplementedError
@@ -634,49 +638,6 @@ class LegacyTagStorage(TagStorage):
             )
         )
 
-    def get_group_ids_for_search_filter(
-            self, project_id, environment_id, tags, candidates=None, limit=1000):
-
-        from sentry.search.base import ANY
-        # Django doesnt support union, so we limit results and try to find
-        # reasonable matches
-
-        # ANY matches should come last since they're the least specific and
-        # will provide the largest range of matches
-        tag_lookups = sorted(six.iteritems(tags), key=lambda k_v: k_v[1] == ANY)
-
-        # get initial matches to start the filter
-        matches = candidates or []
-
-        # for each remaining tag, find matches contained in our
-        # existing set, pruning it down each iteration
-        for k, v in tag_lookups:
-            if v != ANY:
-                base_qs = models.GroupTagValue.objects.filter(
-                    key=k,
-                    value=v,
-                    project_id=project_id,
-                )
-
-            else:
-                base_qs = models.GroupTagValue.objects.filter(
-                    key=k,
-                    project_id=project_id,
-                ).distinct()
-
-            if matches:
-                base_qs = base_qs.filter(group_id__in=matches)
-            else:
-                # restrict matches to only the most recently seen issues
-                base_qs = base_qs.order_by('-last_seen')
-
-            matches = list(base_qs.values_list('group_id', flat=True)[:limit])
-
-            if not matches:
-                return []
-
-        return set(matches)
-
     def update_group_tag_key_values_seen(self, project_id, group_ids):
         gtk_qs = models.GroupTagKey.objects.filter(
             project_id=project_id,
@@ -751,11 +712,20 @@ class LegacyTagStorage(TagStorage):
 
         return queryset
 
-    def get_event_tag_qs(self, project_id, environment_id, key, value):
-        raise NotImplementedError  # there is no index that can appopriate satisfy this query
-
     def update_group_for_events(self, project_id, event_ids, destination_id):
         return models.EventTag.objects.filter(
             project_id=project_id,
             event_id__in=event_ids,
         ).update(group_id=destination_id)
+
+    def delay_index_event_tags(self, organization_id, project_id, group_id,
+                               environment_id, event_id, tags, date_added):
+        index_event_tags.delay(
+            organization_id=organization_id,
+            project_id=project_id,
+            group_id=group_id,
+            environment_id=environment_id,
+            event_id=event_id,
+            tags=tags,
+            date_added=date_added,
+        )

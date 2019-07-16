@@ -1,8 +1,7 @@
-/*eslint no-use-before-define: ["error", { "functions": false }]*/
-import React from 'react';
-import styled from 'react-emotion';
 import {orderBy} from 'lodash';
 import Papa from 'papaparse';
+import React from 'react';
+import styled from 'react-emotion';
 
 import {NUMBER_OF_SERIES_BY_DAY} from '../data';
 
@@ -22,6 +21,7 @@ export function getChartData(data, query) {
   return query.aggregations.map(aggregation => {
     return {
       seriesName: aggregation[2],
+      animation: false,
       data: data.map(res => {
         return {
           value: res[aggregation[2]],
@@ -33,40 +33,45 @@ export function getChartData(data, query) {
 }
 
 /**
- * Returns data formatted for charts, with each aggregation representing a series.
+ * Returns data formatted for widgets, with each aggregation representing a series.
  * Includes each aggregation's series relative percentage to total within that aggregation.
  *
  * @param {Array} data Data returned from Snuba
  * @param {Object} query Query state corresponding to data
+ * @param {Object} options Options object
+ * @param {Boolean} options.includePercentages Include percentages data
  * @returns {Array}
  */
-export function getChartDataWithPercentages(data, query) {
+export function getChartDataForWidget(data, query, options = {}) {
   const {fields} = query;
 
   const totalsBySeries = new Map();
 
-  query.aggregations.forEach(aggregation => {
-    totalsBySeries.set(
-      aggregation[2],
-      data.reduce((acc, res) => {
-        acc += res[aggregation[2]];
-        return acc;
-      }, 0)
-    );
-  });
+  if (options.includePercentages) {
+    query.aggregations.forEach(aggregation => {
+      totalsBySeries.set(
+        aggregation[2],
+        data.reduce((acc, res) => {
+          acc += res[aggregation[2]];
+          return acc;
+        }, 0)
+      );
+    });
+  }
 
   return query.aggregations.map(aggregation => {
-    const total = totalsBySeries.get(aggregation[2]);
+    const total = options.includePercentages && totalsBySeries.get(aggregation[2]);
     return {
       seriesName: aggregation[2],
       data: data.map(res => {
         const obj = {
           value: res[aggregation[2]],
-          name: fields.map(field => `${res[field]}`).join(' '),
+          name: fields.map(field => `${res[field]}`).join(', '),
+          fieldValues: fields.map(field => res[field]),
         };
 
-        if (total) {
-          obj.percentage = Math.round(res[aggregation[2]] / total * 10000) / 100;
+        if (options.includePercentages && total) {
+          obj.percentage = Math.round((res[aggregation[2]] / total) * 10000) / 100;
         }
 
         return obj;
@@ -82,7 +87,6 @@ export function getChartDataWithPercentages(data, query) {
  * @param {Array} data Data returned from Snuba
  * @param {Object} query Query state corresponding to data
  * @param {Object} [options] Options object
- * @param {Boolean} [options.assumeNullAsZero] (default: false) Assume null values as 0
  * @param {Boolean} [options.allSeries] (default: false) Return all series instead of top 10
  * @param {Object} [options.fieldLabelMap] (default: false) Maps value from Snuba to a defined label
  * @returns {Array}
@@ -114,8 +118,7 @@ export function getChartDataByDay(rawData, query, options = {}) {
     const dateIdx = dates.indexOf(formatDate(row.time));
 
     if (top10Series.has(key)) {
-      seriesHash[key][dateIdx].value =
-        options.assumeNullAsZero && row[aggregate] === null ? 0 : row[aggregate];
+      seriesHash[key][dateIdx].value = row[aggregate] === null ? 0 : row[aggregate];
     }
   });
 
@@ -126,6 +129,28 @@ export function getChartDataByDay(rawData, query, options = {}) {
       data: series,
     };
   });
+}
+
+/**
+ * Given result data and the location query, return the correct visualization
+ * @param {Object} data data object for result
+ * @param {String} current visualization from querystring
+ * @returns {String}
+ */
+export function getVisualization(data, current = 'table') {
+  const {baseQuery, byDayQuery} = data;
+
+  if (!byDayQuery.data && ['line-by-day', 'bar-by-day'].includes(current)) {
+    return 'table';
+  }
+
+  if (!baseQuery.query.aggregations.length && ['line', 'bar'].includes(current)) {
+    return 'table';
+  }
+
+  return ['table', 'line', 'bar', 'line-by-day', 'bar-by-day'].includes(current)
+    ? current
+    : 'table';
 }
 
 /**
@@ -161,7 +186,7 @@ function getEmptySeriesHash(seriesSet, dates, options = {}) {
 function getEmptySeries(dates, options) {
   return dates.map(date => {
     return {
-      value: options.assumeNullAsZero ? 0 : null,
+      value: 0,
       name: date,
     };
   });
@@ -171,7 +196,14 @@ function getEmptySeries(dates, options) {
 function getTopSeries(data, aggregate, limit = NUMBER_OF_SERIES_BY_DAY) {
   const allData = orderBy(data, ['time', aggregate], ['desc', 'desc']);
 
-  const orderedData = [...new Set(allData.map(row => row[CHART_KEY]))];
+  const orderedData = [
+    ...new Set(
+      allData
+        // `row` can be an empty time bucket, in which case it will have no `CHART_KEY` property
+        .filter(row => typeof row[CHART_KEY] !== 'undefined')
+        .map(row => row[CHART_KEY])
+    ),
+  ];
 
   return new Set(limit <= 0 ? orderedData : orderedData.slice(0, limit));
 }
@@ -182,6 +214,12 @@ function getDataWithKeys(data, query, options = {}) {
   const aggregate = aggregations[0][2];
 
   return data.map(row => {
+    // `row` can be an empty time bucket, in which case it has no value
+    // for `aggregate`
+    if (!row.hasOwnProperty(aggregate)) {
+      return row;
+    }
+
     const key = fields.length
       ? fields.map(field => getLabel(row[field], options)).join(',')
       : aggregate;
@@ -287,11 +325,11 @@ export function getDisplayText(val) {
   return `${val}`;
 }
 
-const LightGray = styled.span`
+const LightGray = styled('span')`
   color: ${p => p.theme.gray1};
 `;
 
-const DarkGray = styled.span`
+const DarkGray = styled('span')`
   color: ${p => p.theme.gray5};
 `;
 

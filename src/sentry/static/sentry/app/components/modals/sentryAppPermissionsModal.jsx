@@ -64,7 +64,7 @@ class SentryAppPermissionsModal extends React.Component {
   }
 
   render() {
-    let {closeModal, app, orgId, Header, Body} = this.props;
+    const {closeModal, app, orgId, Header, Body} = this.props;
     return (
       <React.Fragment>
         <Header closeButton onHide={closeModal}>
@@ -82,7 +82,9 @@ class SentryAppPermissionsModal extends React.Component {
           {app.redirectUrl && (
             <RedirectionInfo>
               {t(
-                `After installation you'll be redirected to the ${app.name} service to finish setup.`
+                `After installation you'll be redirected to the ${
+                  app.name
+                } service to finish setup.`
               )}
             </RedirectionInfo>
           )}

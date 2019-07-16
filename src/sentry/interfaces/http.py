@@ -13,26 +13,19 @@ __all__ = ('Http', )
 import re
 import six
 
-from django.conf import settings
 from django.utils.translation import ugettext as _
-from six.moves.urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+from django.utils.http import urlencode
+from six.moves.urllib.parse import parse_qsl
 
-from sentry.interfaces.base import Interface, InterfaceValidationError, prune_empty_keys
-from sentry.interfaces.schemas import validate_and_default_interface
-from sentry.utils.safe import trim, trim_dict, trim_pairs
-from sentry.utils.http import heuristic_decode
-from sentry.utils.validators import validate_ip
+from sentry.interfaces.base import Interface, prune_empty_keys
+from sentry.utils import json
+from sentry.utils.strings import to_unicode
+from sentry.utils.safe import get_path
 from sentry.web.helpers import render_to_string
 
 # Instead of relying on a list of hardcoded methods, just loosly match
 # against a pattern.
 http_method_re = re.compile(r'^[A-Z\-_]{3,32}$')
-
-
-def to_bytes(value):
-    if isinstance(value, six.text_type):
-        return value.encode('utf-8')
-    return six.binary_type(value)
 
 
 def format_headers(value):
@@ -86,6 +79,10 @@ def fix_broken_encoding(value):
     return value
 
 
+def jsonify(value):
+    return to_unicode(value) if isinstance(value, six.string_types) else json.dumps(value)
+
+
 class Http(Interface):
     """
     The Request information is stored in the Http interface. Two arguments
@@ -124,94 +121,19 @@ class Http(Interface):
 
     @classmethod
     def to_python(cls, data):
-        is_valid, errors = validate_and_default_interface(data, cls.path)
-        if not is_valid:
-            raise InterfaceValidationError("Invalid interface data")
-
-        kwargs = {}
-
-        if data.get('method'):
-            method = data['method'].upper()
-            # Optimize for the common path here, where it's a GET/POST, falling
-            # back to a regular expresion test
-            if method not in ('GET', 'POST') and not http_method_re.match(method):
-                raise InterfaceValidationError("Invalid value for 'method'")
-            kwargs['method'] = method
-        else:
-            kwargs['method'] = None
-
-        if data.get('url', None):
-            scheme, netloc, path, query_bit, fragment_bit = urlsplit(data['url'])
-        else:
-            scheme = netloc = path = query_bit = fragment_bit = None
-
-        query_string = data.get('query_string') or query_bit
-        if query_string:
-            # if querystring was a dict, convert it to a string
-            if isinstance(query_string, dict):
-                query_string = urlencode(
-                    [(to_bytes(k), to_bytes(v)) for k, v in query_string.items()]
-                )
-            else:
-                if query_string[0] == '?':
-                    # remove '?' prefix
-                    query_string = query_string[1:]
-            kwargs['query_string'] = trim(query_string, 4096)
-        else:
-            kwargs['query_string'] = ''
-
-        fragment = data.get('fragment') or fragment_bit
-
-        cookies = data.get('cookies')
-        # if cookies were [also] included in headers we
-        # strip them out
-        headers = data.get('headers')
-        if headers:
-            headers, cookie_header = format_headers(headers)
-            if not cookies and cookie_header:
-                cookies = cookie_header
-        else:
-            headers = ()
-
-        # We prefer the body to be a string, since we can then attempt to parse it
-        # as JSON OR decode it as a URL encoded query string, without relying on
-        # the correct content type header being passed.
-        body = data.get('data')
-
-        content_type = next((v for k, v in headers if k == 'Content-Type'), None)
-
-        # Remove content type parameters
-        if content_type is not None:
-            content_type = content_type.partition(';')[0].rstrip()
-
-        # We process request data once during ingestion and again when
-        # requesting the http interface over the API. Avoid overwriting
-        # decoding the body again.
-        inferred_content_type = data.get('inferred_content_type', content_type)
-
-        if 'inferred_content_type' not in data and not isinstance(body, dict):
-            body, inferred_content_type = heuristic_decode(body, content_type)
-
-        if body:
-            body = trim(body, settings.SENTRY_MAX_HTTP_BODY_SIZE)
-
-        env = data.get('env', {})
-        # TODO (alex) This could also be accomplished with schema (with formats)
-        if 'REMOTE_ADDR' in env:
-            try:
-                validate_ip(env['REMOTE_ADDR'], required=False)
-            except ValueError:
-                del env['REMOTE_ADDR']
-
-        kwargs['inferred_content_type'] = inferred_content_type
-        kwargs['cookies'] = trim_pairs(format_cookies(cookies))
-        kwargs['env'] = trim_dict(env)
-        kwargs['headers'] = trim_pairs(headers)
-        kwargs['data'] = fix_broken_encoding(body)
-        kwargs['url'] = urlunsplit((scheme, netloc, path, '', ''))
-        kwargs['fragment'] = trim(fragment, 1024)
-
-        return cls(**kwargs)
+        data.setdefault('query_string', [])
+        for key in (
+            "method",
+            "url",
+            "fragment",
+            "cookies",
+            "headers",
+            "data",
+            "env",
+            "inferred_content_type",
+        ):
+            data.setdefault(key, None)
+        return cls(**data)
 
     def to_json(self):
         return prune_empty_keys({
@@ -229,10 +151,11 @@ class Http(Interface):
     @property
     def full_url(self):
         url = self.url
-        if self.query_string:
-            url = url + '?' + self.query_string
-        if self.fragment:
-            url = url + '#' + self.fragment
+        if url:
+            if self.query_string:
+                url = url + '?' + urlencode(get_path(self.query_string, filter=True))
+            if self.fragment:
+                url = url + '#' + self.fragment
         return url
 
     def to_email_html(self, event, **kwargs):
@@ -242,7 +165,7 @@ class Http(Interface):
                 'url': self.full_url,
                 'short_url': self.url,
                 'method': self.method,
-                'query_string': self.query_string,
+                'query_string': urlencode(get_path(self.query_string, filter=True)),
                 'fragment': self.fragment,
             }
         )
@@ -250,7 +173,7 @@ class Http(Interface):
     def get_title(self):
         return _('Request')
 
-    def get_api_context(self, is_public=False):
+    def get_api_context(self, is_public=False, platform=None):
         if is_public:
             return {}
 
@@ -275,7 +198,7 @@ class Http(Interface):
         }
         return data
 
-    def get_api_meta(self, meta, is_public=False):
+    def get_api_meta(self, meta, is_public=False, platform=None):
         if is_public:
             return None
 

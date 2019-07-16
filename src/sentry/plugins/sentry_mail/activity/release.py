@@ -198,15 +198,17 @@ class ReleaseActivityEmail(ActivityEmail):
                 ).values_list('project_id', flat=True).distinct()
             )
             projects = [p for p in self.projects if p.id in team_projects]
+
         release_links = [
             absolute_uri(
-                u'/{}/{}/releases/{}/'.format(
+                u'/organizations/{}/releases/{}/?project={}'.format(
                     self.organization.slug,
-                    p.slug,
                     self.release.version,
+                    p.id,
                 )
             ) for p in projects
         ]
+
         resolved_issue_counts = [self.group_counts_by_project.get(p.id, 0) for p in projects]
         return {
             'projects': zip(projects, release_links, resolved_issue_counts),

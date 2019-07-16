@@ -31,20 +31,25 @@ describe('Discover', function() {
       queryBuilder.fetch = jest.fn(() => Promise.resolve(mockResponse));
     });
 
-    it('auto-runs saved query', async function() {
+    it('auto-runs saved query after tags are loaded', async function() {
       const savedQuery = TestStubs.DiscoverSavedQuery();
       wrapper = mount(
         <Discover
+          location={{query: {}}}
           queryBuilder={queryBuilder}
           organization={organization}
           savedQuery={savedQuery}
           params={{savedQueryId: savedQuery.id}}
           updateSavedQueryData={jest.fn()}
           toggleEditMode={jest.fn()}
-          isLoading={false}
+          isLoading={true}
         />,
         TestStubs.routerContext([{organization}])
       );
+      await tick();
+      expect(wrapper.state().data.baseQuery.query).toBe(null);
+      expect(wrapper.state().data.baseQuery.data).toBe(null);
+      wrapper.setProps({isLoading: false});
       await tick();
       expect(wrapper.state().data.baseQuery.query).toEqual(queryBuilder.getExternal());
       expect(wrapper.state().data.baseQuery.data).toEqual(
@@ -52,9 +57,40 @@ describe('Discover', function() {
       );
     });
 
-    it('does not auto run non-saved query', async function() {
+    it('auto-runs when there is a query string after tags are loaded', async function() {
       wrapper = mount(
         <Discover
+          location={{
+            query: {},
+            search:
+              'projects=%5B%5D&fields=%5B%22id%22%2C%22issue.id%22%2C%22project.name%22%2C%22platform%22%2C%22timestamp%22%5D&conditions=%5B%5D&aggregations=%5B%5D&range=%227d%22&orderby=%22-timestamp%22&limit=1000&start=null&end=null',
+          }}
+          queryBuilder={queryBuilder}
+          organization={organization}
+          updateSavedQueryData={jest.fn()}
+          toggleEditMode={jest.fn()}
+          isLoading={true}
+        />,
+        TestStubs.routerContext([{organization}])
+      );
+      await tick();
+      expect(wrapper.state().data.baseQuery.query).toBe(null);
+      expect(wrapper.state().data.baseQuery.data).toBe(null);
+      wrapper.setProps({isLoading: false});
+      await tick();
+      expect(wrapper.state().data.baseQuery.query).toEqual(queryBuilder.getExternal());
+      expect(wrapper.state().data.baseQuery.data).toEqual(
+        expect.objectContaining({data: mockResponse.data})
+      );
+    });
+
+    it('does not auto run when there is no query string', async function() {
+      wrapper = mount(
+        <Discover
+          location={{
+            query: {},
+            search: '',
+          }}
           queryBuilder={queryBuilder}
           organization={organization}
           updateSavedQueryData={jest.fn()}
@@ -76,7 +112,7 @@ describe('Discover', function() {
           queryBuilder={queryBuilder}
           organization={organization}
           updateSavedQueryData={jest.fn()}
-          location={{search: ''}}
+          location={{query: {}, search: ''}}
           params={{}}
           toggleEditMode={jest.fn()}
           isLoading={false}
@@ -102,7 +138,7 @@ describe('Discover', function() {
           queryBuilder={queryBuilder}
           organization={organization}
           updateSavedQueryData={jest.fn()}
-          location={{search: ''}}
+          location={{query: {}, search: ''}}
           params={{}}
           toggleEditMode={jest.fn()}
           isLoading={false}
@@ -113,6 +149,7 @@ describe('Discover', function() {
       expect(wrapper.find('TimeRangeSelector').text()).toEqual('Last 14 days');
       wrapper.setProps({
         location: {
+          query: {},
           search:
             'projects=%5B%5D&fields=%5B%22id%22%2C%22issue.id%22%2C%22project.name%22%2C%22platform%22%2C%22timestamp%22%5D&conditions=%5B%5D&aggregations=%5B%5D&range=%227d%22&orderby=%22-timestamp%22&limit=1000&start=null&end=null',
         },
@@ -150,6 +187,7 @@ describe('Discover', function() {
           queryBuilder={queryBuilder}
           organization={organization}
           params={{}}
+          location={{query: {}, search: ''}}
           updateSavedQueryData={jest.fn()}
           toggleEditMode={jest.fn()}
           isLoading={false}
@@ -204,9 +242,12 @@ describe('Discover', function() {
     let wrapper;
     beforeEach(function() {
       queryBuilder.fetch = jest.fn(() => Promise.resolve(mockResponse));
+      queryBuilder.fetchWithoutLimit = jest.fn(() => Promise.resolve(mockResponse));
 
       wrapper = mount(
         <Discover
+          params={{}}
+          location={{query: {}, search: ''}}
           queryBuilder={queryBuilder}
           organization={organization}
           updateSavedQueryData={jest.fn()}
@@ -262,13 +303,13 @@ describe('Discover', function() {
       wrapper.instance().updateField('aggregations', [['count()', null, 'count']]);
       wrapper.instance().runQuery();
       await tick();
-      expect(queryBuilder.fetch).toHaveBeenCalledTimes(2);
-      expect(queryBuilder.fetch).toHaveBeenNthCalledWith(1, queryBuilder.getExternal());
-      expect(queryBuilder.fetch).toHaveBeenNthCalledWith(2, {
+      expect(queryBuilder.fetch).toHaveBeenCalledWith(queryBuilder.getExternal());
+      expect(queryBuilder.fetchWithoutLimit).toHaveBeenCalledWith({
         ...queryBuilder.getExternal(),
         groupby: ['time'],
         rollup: 60 * 60 * 24,
         orderby: '-time',
+        limit: 5000,
       });
     });
   });
@@ -277,6 +318,8 @@ describe('Discover', function() {
     it('can be saved', function() {
       const wrapper = mount(
         <Discover
+          params={{}}
+          location={{query: {}, search: ''}}
           queryBuilder={queryBuilder}
           organization={organization}
           updateSavedQueryData={jest.fn()}
@@ -309,6 +352,7 @@ describe('Discover', function() {
         browserHistory.push.mockImplementation(function({search}) {
           wrapper.setProps({
             location: {
+              query: {},
               search: search || '',
             },
           });
@@ -321,7 +365,11 @@ describe('Discover', function() {
           <Discover
             queryBuilder={queryBuilder}
             organization={organization}
-            location={{location: '?fields=something'}}
+            location={{
+              location: '?fields=something',
+              query: {fields: 'something'},
+              search: '?fields=something',
+            }}
             params={{}}
             updateSavedQueryData={jest.fn()}
             toggleEditMode={jest.fn()}
@@ -340,7 +388,9 @@ describe('Discover', function() {
       it('resets query builder and state', function() {
         wrapper.instance().reset();
         expect(queryBuilder.reset).toHaveBeenCalled();
-        const {data: {baseQuery, byDayQuery}} = wrapper.instance().state;
+        const {
+          data: {baseQuery, byDayQuery},
+        } = wrapper.instance().state;
         expect(baseQuery.query).toBeNull();
         expect(baseQuery.data).toBeNull();
         expect(byDayQuery.query).toBeNull();
@@ -379,6 +429,7 @@ describe('Discover', function() {
         const prevCallCount = queryBuilder.reset.mock.calls.length;
         wrapper.setProps({
           location: {
+            query: {},
             search: '?fields=[]',
           },
         });
@@ -399,7 +450,10 @@ describe('Discover', function() {
           params={{savedQueryId: savedQuery.id}}
           updateSavedQueryData={jest.fn()}
           view="saved"
-          location={{search: ''}}
+          location={{
+            query: {},
+            search: '',
+          }}
           toggleEditMode={jest.fn()}
           isLoading={false}
         />,
@@ -479,7 +533,10 @@ describe('Discover', function() {
         <Discover
           queryBuilder={queryBuilder}
           organization={organization}
-          location={{location: '?fields=something'}}
+          location={{
+            query: {},
+            search: '?fields=something',
+          }}
           updateSavedQueryData={jest.fn()}
           toggleEditMode={jest.fn()}
           isLoading={false}
@@ -487,9 +544,9 @@ describe('Discover', function() {
         TestStubs.routerContext()
       );
 
-      queryBuilder.fetch = jest.fn(() =>
-        Promise.resolve({timing: {}, data: [], meta: []})
-      );
+      const mockResponse = Promise.resolve({timing: {}, data: [], meta: []});
+      queryBuilder.fetch = jest.fn(() => mockResponse);
+      queryBuilder.fetchWithoutLimit = jest.fn(() => mockResponse);
     });
 
     it('renders example queries', function() {
@@ -510,7 +567,8 @@ describe('Discover', function() {
       expect(query.fields).toEqual(['stack.filename']);
       expect(query.aggregations).toEqual([['count()', null, 'count']]);
       expect(query.conditions).toEqual([]);
-      expect(queryBuilder.fetch).toHaveBeenCalledTimes(2);
+      expect(queryBuilder.fetch).toHaveBeenCalled();
+      expect(queryBuilder.fetchWithoutLimit).toHaveBeenCalled();
     });
   });
 
@@ -520,6 +578,7 @@ describe('Discover', function() {
       browserHistory.push.mockImplementation(function({search}) {
         wrapper.setProps({
           location: {
+            query: {},
             search: search || '',
           },
         });
@@ -529,7 +588,10 @@ describe('Discover', function() {
         <Discover
           queryBuilder={queryBuilder}
           organization={organization}
-          location={{location: ''}}
+          location={{
+            query: {},
+          }}
+          params={{}}
           updateSavedQueryData={jest.fn()}
           toggleEditMode={jest.fn()}
           isLoading={false}
@@ -556,20 +618,35 @@ describe('Discover', function() {
     let query;
 
     beforeEach(function() {
+      const config = ConfigStore.getConfig();
+      ConfigStore.loadInitialData({
+        ...config,
+        user: {
+          ...config.user,
+          options: {...config.user.options, timezone: 'America/New_York'},
+        },
+      });
+      GlobalSelectionStore.reset();
+
       query = MockApiClient.addMockResponse({
         url: '/organizations/org-slug/discover/query/?per_page=1000&cursor=0:0:1',
         method: 'POST',
         body: {timing: {}, data: [], meta: []},
       });
+
+      const routerContext = TestStubs.routerContext([{organization}]);
+
       wrapper = mount(
         <Discover
           queryBuilder={queryBuilder}
+          params={{}}
+          location={routerContext.context.location}
           organization={organization}
           updateSavedQueryData={jest.fn()}
           toggleEditMode={jest.fn()}
           isLoading={false}
         />,
-        TestStubs.routerContext([{organization}])
+        routerContext
       );
     });
 
@@ -598,22 +675,20 @@ describe('Discover', function() {
       await tick();
 
       // Should make request for the last 14 days as an absolute date range
+      // Current time in EST is '2017-10-16T22:41:20'
       expect(query).toHaveBeenLastCalledWith(
         expect.anything(),
         expect.objectContaining({
           data: expect.objectContaining({
             start: '2017-10-03T02:41:20',
             end: '2017-10-17T02:41:20',
+            utc: false,
           }),
         })
       );
     });
 
     it('switches between UTC and local dates', async function() {
-      ConfigStore.loadInitialData({
-        user: {options: {timezone: 'America/New_York'}},
-      });
-
       // Select absolute date
       wrapper.find('TimeRangeSelector HeaderItem').simulate('click');
       wrapper.find('SelectorItem[value="absolute"]').simulate('click');
@@ -627,16 +702,16 @@ describe('Discover', function() {
       // Hide date picker
       wrapper.find('TimeRangeSelector HeaderItem').simulate('click');
 
-      await tick();
-      wrapper.update();
+      await wrapper.update();
 
-      // Should make request for the last 14 days as an absolute date range
+      // Should make request for the last day an absolute date range
       expect(query).toHaveBeenLastCalledWith(
         expect.anything(),
         expect.objectContaining({
           data: expect.objectContaining({
-            start: '2017-10-01T00:00:00',
-            end: '2017-10-01T23:59:59',
+            start: '2017-10-01T04:00:00',
+            end: '2017-10-02T03:59:59',
+            utc: false,
           }),
         })
       );
@@ -648,12 +723,33 @@ describe('Discover', function() {
       // Hide dropdown
       wrapper.find('TimeRangeSelector HeaderItem').simulate('click');
 
+      await wrapper.update();
+
+      expect(query).toHaveBeenLastCalledWith(
+        expect.anything(),
+        expect.objectContaining({
+          data: expect.objectContaining({
+            start: '2017-10-01T00:00:00',
+            end: '2017-10-01T23:59:59',
+            utc: true,
+          }),
+        })
+      );
+
+      wrapper.find('TimeRangeSelector HeaderItem').simulate('click');
+
+      // Switch from UTC
+      wrapper.find('UtcPicker Checkbox').simulate('change');
+      // Hide dropdown
+      wrapper.find('TimeRangeSelector HeaderItem').simulate('click');
+
       expect(query).toHaveBeenLastCalledWith(
         expect.anything(),
         expect.objectContaining({
           data: expect.objectContaining({
             start: '2017-10-01T04:00:00',
             end: '2017-10-02T03:59:59',
+            utc: false,
           }),
         })
       );

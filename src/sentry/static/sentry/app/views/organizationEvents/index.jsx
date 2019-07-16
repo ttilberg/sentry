@@ -1,4 +1,3 @@
-import {withRouter} from 'react-router';
 import PropTypes from 'prop-types';
 import React from 'react';
 import styled from 'react-emotion';
@@ -8,19 +7,19 @@ import {t} from 'app/locale';
 import BetaTag from 'app/components/betaTag';
 import Feature from 'app/components/acl/feature';
 import GlobalSelectionHeader from 'app/components/organizations/globalSelectionHeader';
+import NoProjectMessage from 'app/components/noProjectMessage';
 import SentryTypes from 'app/sentryTypes';
 import PageHeading from 'app/components/pageHeading';
 import withGlobalSelection from 'app/utils/withGlobalSelection';
 import withOrganization from 'app/utils/withOrganization';
 import {PageContent, PageHeader} from 'app/styles/organization';
+import LazyLoad from 'app/components/lazyLoad';
 
-import EventsContext from './utils/eventsContext';
 import SearchBar from './searchBar';
 
 class OrganizationEventsContainer extends React.Component {
   static propTypes = {
     organization: SentryTypes.Organization,
-    selection: SentryTypes.GlobalSelection,
     router: PropTypes.object,
   };
 
@@ -31,34 +30,44 @@ class OrganizationEventsContainer extends React.Component {
   }
 
   handleSearch = query => {
-    let {router, location} = this.props;
+    const {router, location} = this.props;
     router.push({
       pathname: location.pathname,
       query: getParams({
         ...(location.query || {}),
         query,
-        zoom: null,
       }),
     });
   };
 
   render() {
-    const {organization, location, selection, children} = this.props;
+    const {organization, location, children, ...props} = this.props;
+
+    const hasEventsV2 = new Set(organization.features).has('events-v2');
+
+    if (hasEventsV2) {
+      return (
+        <LazyLoad
+          component={() =>
+            import(/* webpackChunkName: "organizationEventsV2" */ 'app/views/organizationEventsV2').then(
+              mod => mod.default
+            )
+          }
+          organization={organization}
+          location={location}
+          {...props}
+        />
+      );
+    }
 
     return (
-      <EventsContext.Provider
-        value={{
-          project: selection.projects,
-          environment: selection.environments,
-          ...selection.datetime,
-        }}
-      >
-        <Feature features={['global-views']} renderDisabled>
-          <GlobalSelectionHeader
-            organization={organization}
-            resetParamsOnChange={['zoom', 'cursor']}
-          />
-          <PageContent>
+      <Feature features={['events']} hookName="events-page" renderDisabled>
+        <GlobalSelectionHeader
+          organization={organization}
+          resetParamsOnChange={['cursor']}
+        />
+        <PageContent>
+          <NoProjectMessage organization={organization}>
             <Body>
               <PageHeader>
                 <HeaderTitle>
@@ -71,18 +80,15 @@ class OrganizationEventsContainer extends React.Component {
                   onSearch={this.handleSearch}
                 />
               </PageHeader>
-
               {children}
             </Body>
-          </PageContent>
-        </Feature>
-      </EventsContext.Provider>
+          </NoProjectMessage>
+        </PageContent>
+      </Feature>
     );
   }
 }
-export default withRouter(
-  withOrganization(withGlobalSelection(OrganizationEventsContainer))
-);
+export default withOrganization(withGlobalSelection(OrganizationEventsContainer));
 export {OrganizationEventsContainer};
 
 const Body = styled('div')`

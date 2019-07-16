@@ -9,7 +9,8 @@ from sentry import roles
 from sentry.api.bases.organization import (
     OrganizationEndpoint, OrganizationPermission)
 from sentry.api.exceptions import ResourceDoesNotExist
-from sentry.api.serializers import serialize, RoleSerializer, OrganizationMemberWithTeamsSerializer
+from sentry.api.serializers import (
+    DetailedUserSerializer, serialize, RoleSerializer, OrganizationMemberWithTeamsSerializer)
 from sentry.api.serializers.rest_framework import ListField
 from sentry.auth.superuser import is_active_superuser
 from sentry.models import (
@@ -75,11 +76,14 @@ class OrganizationMemberDetailsEndpoint(OrganizationEndpoint):
                 user__is_active=True,
             )
         else:
-            queryset = OrganizationMember.objects.filter(
-                Q(user__is_active=True) | Q(user__isnull=True),
-                organization=organization,
-                id=member_id,
-            )
+            try:
+                queryset = OrganizationMember.objects.filter(
+                    Q(user__is_active=True) | Q(user__isnull=True),
+                    organization=organization,
+                    id=member_id,
+                )
+            except ValueError:
+                raise OrganizationMember.DoesNotExist()
         return queryset.select_related('user').get()
 
     def _is_only_owner(self, member):
@@ -105,6 +109,7 @@ class OrganizationMemberDetailsEndpoint(OrganizationEndpoint):
 
         if request.access.has_scope('member:admin'):
             context['invite_link'] = member.get_invite_link()
+            context['user'] = serialize(member.user, request.user, DetailedUserSerializer())
 
         context['isOnlyOwner'] = self._is_only_owner(member)
         context['roles'] = serialize(
@@ -133,7 +138,7 @@ class OrganizationMemberDetailsEndpoint(OrganizationEndpoint):
             raise ResourceDoesNotExist
 
         serializer = OrganizationMemberSerializer(
-            data=request.DATA, partial=True)
+            data=request.data, partial=True)
 
         if not serializer.is_valid():
             return Response(status=400)
@@ -145,7 +150,7 @@ class OrganizationMemberDetailsEndpoint(OrganizationEndpoint):
             auth_provider = None
 
         allowed_roles = None
-        result = serializer.object
+        result = serializer.validated_data
 
         # XXX(dcramer): if/when this expands beyond reinvite we need to check
         # access level

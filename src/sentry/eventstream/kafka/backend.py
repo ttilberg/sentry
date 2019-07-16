@@ -1,82 +1,28 @@
 from __future__ import absolute_import
 
-from datetime import datetime
 import logging
-import pytz
 import six
-from uuid import uuid4
 
-from confluent_kafka import OFFSET_INVALID, Producer, TopicPartition
+from confluent_kafka import OFFSET_INVALID, TopicPartition
+from django.conf import settings
 from django.utils.functional import cached_property
 
-from sentry import options, quotas
-from sentry.models import Organization
-from sentry.eventstream.base import EventStream
 from sentry.eventstream.kafka.consumer import SynchronizedConsumer
 from sentry.eventstream.kafka.protocol import get_task_kwargs_for_message
-from sentry.tasks.post_process import post_process_group
-from sentry.utils import json
+from sentry.eventstream.snuba import SnubaProtocolEventStream
+from sentry.utils import json, kafka, metrics
+
 
 logger = logging.getLogger(__name__)
 
 
-# Beware! Changing this protocol (introducing a new version, or the message
-# format/fields themselves) requires consideration of all downstream consumers.
-# This includes the post-processing relay code!
-EVENT_PROTOCOL_VERSION = 2
-
-# Version 1 format: (1, TYPE, [...REST...])
-#   Insert: (1, 'insert', {
-#       ...event json...
-#   }, {
-#       ...state for post-processing...
-#   })
-#
-#   Mutations that *should be ignored*: (1, ('delete_groups'|'unmerge'|'merge'), {...})
-#
-#   In short, for protocol version 1 only messages starting with (1, 'insert', ...)
-#   should be processed.
-
-# Version 2 format: (2, TYPE, [...REST...])
-#   Insert: (2, 'insert', {
-#       ...event json...
-#   }, {
-#       ...state for post-processing...
-#   })
-#   Delete Groups: (2, '(start_delete_groups|end_delete_groups)', {
-#       'transaction_id': uuid,
-#       'project_id': id,
-#       'group_ids': [id2, id2, id3],
-#       'datetime': timestamp,
-#   })
-#   Merge: (2, '(start_merge|end_merge)', {
-#       'transaction_id': uuid,
-#       'project_id': id,
-#       'previous_group_ids': [id2, id2],
-#       'new_group_id': id,
-#       'datetime': timestamp,
-#   })
-#   Unmerge: (2, '(start_unmerge|end_unmerge)', {
-#       'transaction_id': uuid,
-#       'project_id': id,
-#       'previous_group_id': id,
-#       'new_group_id': id,
-#       'hashes': [hash2, hash2]
-#       'datetime': timestamp,
-#   })
-
-
-class KafkaEventStream(EventStream):
-    def __init__(self, publish_topic='events', producer_configuration=None, **options):
-        if producer_configuration is None:
-            producer_configuration = {}
-
-        self.publish_topic = publish_topic
-        self.producer_configuration = producer_configuration
+class KafkaEventStream(SnubaProtocolEventStream):
+    def __init__(self, **options):
+        self.topic = settings.KAFKA_TOPICS[settings.KAFKA_EVENTS]['topic']
 
     @cached_property
     def producer(self):
-        return Producer(self.producer_configuration)
+        return kafka.producers.get(settings.KAFKA_EVENTS)
 
     def delivery_callback(self, error, message):
         if error is not None:
@@ -100,10 +46,10 @@ class KafkaEventStream(EventStream):
 
         try:
             self.producer.produce(
-                topic=self.publish_topic,
+                topic=self.topic,
                 key=key.encode('utf-8'),
                 value=json.dumps(
-                    (EVENT_PROTOCOL_VERSION, _type) + extra_data
+                    (self.EVENT_PROTOCOL_VERSION, _type) + extra_data
                 ),
                 on_delivery=self.delivery_callback,
             )
@@ -115,140 +61,18 @@ class KafkaEventStream(EventStream):
             # flush() is a convenience method that calls poll() until len() is zero
             self.producer.flush()
 
-    def insert(self, group, event, is_new, is_sample, is_regression,
-               is_new_group_environment, primary_hash, skip_consume=False):
-        if options.get('eventstream.kafka.send-post_process-task'):
-            super(KafkaEventStream, self).insert(
-                group, event, is_new, is_sample,
-                is_regression, is_new_group_environment,
-                primary_hash, skip_consume
-            )
+    def requires_post_process_forwarder(self):
+        return True
 
-        project = event.project
-        retention_days = quotas.get_event_retention(
-            organization=Organization(project.organization_id)
-        )
+    def run_post_process_forwarder(self, consumer_group, commit_log_topic,
+                                   synchronize_commit_group, commit_batch_size=100, initial_offset_reset='latest'):
+        logger.debug('Starting post-process forwarder...')
 
-        self._send(project.id, 'insert', extra_data=({
-            'group_id': event.group_id,
-            'event_id': event.event_id,
-            'organization_id': project.organization_id,
-            'project_id': event.project_id,
-            # TODO(mitsuhiko): We do not want to send this incorrect
-            # message but this is what snuba needs at the moment.
-            'message': event.message,
-            'platform': event.platform,
-            'datetime': event.datetime,
-            'data': dict(event.data.items()),
-            'primary_hash': primary_hash,
-            'retention_days': retention_days,
-        }, {
-            'is_new': is_new,
-            'is_sample': is_sample,
-            'is_regression': is_regression,
-            'is_new_group_environment': is_new_group_environment,
-            'skip_consume': skip_consume,
-        },))
-
-    def start_delete_groups(self, project_id, group_ids):
-        if not group_ids:
-            return
-
-        state = {
-            'transaction_id': uuid4().hex,
-            'project_id': project_id,
-            'group_ids': list(group_ids),
-            'datetime': datetime.now(tz=pytz.utc),
-        }
-
-        self._send(
-            project_id,
-            'start_delete_groups',
-            extra_data=(state,),
-            asynchronous=False
-        )
-
-        return state
-
-    def end_delete_groups(self, state):
-        state = state.copy()
-        state['datetime'] = datetime.now(tz=pytz.utc)
-        self._send(
-            state['project_id'],
-            'end_delete_groups',
-            extra_data=(state,),
-            asynchronous=False
-        )
-
-    def start_merge(self, project_id, previous_group_ids, new_group_id):
-        if not previous_group_ids:
-            return
-
-        state = {
-            'transaction_id': uuid4().hex,
-            'project_id': project_id,
-            'previous_group_ids': list(previous_group_ids),
-            'new_group_id': new_group_id,
-            'datetime': datetime.now(tz=pytz.utc),
-        }
-
-        self._send(
-            project_id,
-            'start_merge',
-            extra_data=(state,),
-            asynchronous=False
-        )
-
-        return state
-
-    def end_merge(self, state):
-        state = state.copy()
-        state['datetime'] = datetime.now(tz=pytz.utc)
-        self._send(
-            state['project_id'],
-            'end_merge',
-            extra_data=(state,),
-            asynchronous=False
-        )
-
-    def start_unmerge(self, project_id, hashes, previous_group_id, new_group_id):
-        if not hashes:
-            return
-
-        state = {
-            'transaction_id': uuid4().hex,
-            'project_id': project_id,
-            'previous_group_id': previous_group_id,
-            'new_group_id': new_group_id,
-            'hashes': list(hashes),
-            'datetime': datetime.now(tz=pytz.utc),
-        }
-
-        self._send(
-            project_id,
-            'start_unmerge',
-            extra_data=(state,),
-            asynchronous=False
-        )
-
-        return state
-
-    def end_unmerge(self, state):
-        state = state.copy()
-        state['datetime'] = datetime.now(tz=pytz.utc)
-        self._send(
-            state['project_id'],
-            'end_unmerge',
-            extra_data=(state,),
-            asynchronous=False
-        )
-
-    def relay(self, consumer_group, commit_log_topic,
-              synchronize_commit_group, commit_batch_size=100, initial_offset_reset='latest'):
-        logger.debug('Starting relay...')
+        cluster_name = settings.KAFKA_TOPICS[settings.KAFKA_EVENTS]['cluster']
+        bootstrap_servers = settings.KAFKA_CLUSTERS[cluster_name]['bootstrap.servers']
 
         consumer = SynchronizedConsumer(
-            bootstrap_servers=self.producer_configuration['bootstrap.servers'],
+            bootstrap_servers=bootstrap_servers,
             consumer_group=consumer_group,
             commit_log_topic=commit_log_topic,
             synchronize_commit_group=synchronize_commit_group,
@@ -323,7 +147,7 @@ class KafkaEventStream(EventStream):
                 commit(offsets_to_commit)
 
         consumer.subscribe(
-            [self.publish_topic],
+            [self.topic],
             on_assign=on_assign,
             on_revoke=on_revoke,
         )
@@ -363,9 +187,12 @@ class KafkaEventStream(EventStream):
                 i = i + 1
                 owned_partition_offsets[key] = message.offset() + 1
 
-                task_kwargs = get_task_kwargs_for_message(message.value())
+                with metrics.timer('eventstream.duration', instance='get_task_kwargs_for_message'):
+                    task_kwargs = get_task_kwargs_for_message(message.value())
+
                 if task_kwargs is not None:
-                    post_process_group.delay(**task_kwargs)
+                    with metrics.timer('eventstream.duration', instance='dispatch_post_process_group_task'):
+                        self._dispatch_post_process_group_task(**task_kwargs)
 
                 if i % commit_batch_size == 0:
                     commit_offsets()

@@ -4,20 +4,16 @@ from django.db import IntegrityError, transaction
 
 from rest_framework.response import Response
 
-from .project_releases import ReleaseSerializer
+from sentry.api.bases import NoProjects, OrganizationEventsError
 from sentry.api.base import DocSection, EnvironmentMixin
 from sentry.api.bases.organization import OrganizationReleasesBaseEndpoint
 from sentry.api.exceptions import InvalidRepository
 from sentry.api.paginator import OffsetPaginator
 from sentry.api.serializers import serialize
 from sentry.api.serializers.rest_framework import (
-    ReleaseHeadCommitSerializer, ReleaseHeadCommitSerializerDeprecated, ListField
+    ReleaseHeadCommitSerializer, ReleaseHeadCommitSerializerDeprecated, ReleaseWithVersionSerializer, ListField
 )
-from sentry.models import (
-    Activity,
-    Project,
-    Release,
-)
+from sentry.models import Activity, Release
 from sentry.signals import release_created
 from sentry.utils.apidocs import scenario, attach_scenarios
 
@@ -67,12 +63,12 @@ def list_org_releases_scenario(runner):
     runner.request(method='GET', path='/organizations/%s/releases/' % (runner.org.slug, ))
 
 
-class ReleaseSerializerWithProjects(ReleaseSerializer):
+class ReleaseSerializerWithProjects(ReleaseWithVersionSerializer):
     projects = ListField()
     headCommits = ListField(
         child=ReleaseHeadCommitSerializerDeprecated(),
         required=False,
-        allow_null=False,
+        allow_null=False
     )
     refs = ListField(
         child=ReleaseHeadCommitSerializer(),
@@ -97,11 +93,16 @@ class OrganizationReleasesEndpoint(OrganizationReleasesBaseEndpoint, Environment
         """
         query = request.GET.get('query')
 
-        filter_params = self.get_filter_params(
-            request,
-            organization,
-            date_filter_optional=True,
-        )
+        try:
+            filter_params = self.get_filter_params(
+                request,
+                organization,
+                date_filter_optional=True,
+            )
+        except NoProjects:
+            return Response([])
+        except OrganizationEventsError as exc:
+            return Response({'detail': exc.message}, status=400)
 
         queryset = Release.objects.filter(
             organization=organization,
@@ -176,15 +177,13 @@ class OrganizationReleasesEndpoint(OrganizationReleasesBaseEndpoint, Environment
                            ``commit`` may contain a range in the form of ``previousCommit..commit``
         :auth: required
         """
-        serializer = ReleaseSerializerWithProjects(data=request.DATA)
+        serializer = ReleaseSerializerWithProjects(data=request.data)
 
         if serializer.is_valid():
-            result = serializer.object
+            result = serializer.validated_data
 
             allowed_projects = {
-                p.slug: p for p in Project.objects.filter(
-                    id__in=self.get_project_ids(request, organization)
-                )
+                p.slug: p for p in self.get_projects(request, organization)
             }
 
             projects = []

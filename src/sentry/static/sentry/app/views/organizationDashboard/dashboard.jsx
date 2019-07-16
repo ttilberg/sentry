@@ -2,32 +2,31 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import styled from 'react-emotion';
 
-import {t} from 'app/locale';
-import AsyncView from 'app/views/asyncView';
 import SentryTypes from 'app/sentryTypes';
+import Widget from 'app/views/organizationDashboard/widget';
 import space from 'app/styles/space';
 
-class Dashboard extends AsyncView {
+class Dashboard extends React.Component {
   static propTypes = {
+    releasesLoading: PropTypes.bool,
+    releases: PropTypes.arrayOf(SentryTypes.Release),
     widgets: PropTypes.arrayOf(SentryTypes.Widget),
+    router: PropTypes.object,
   };
 
-  getTitle() {
-    return t('Dashboard');
-  }
-
-  getEndpoints() {
-    return [];
-  }
-
   render() {
-    const {widgets} = this.props;
+    const {releasesLoading, router, releases, widgets} = this.props;
 
     return (
       <Widgets>
         {widgets.map((widget, i) => (
           <WidgetWrapper key={i}>
-            <div />
+            <Widget
+              releasesLoading={releasesLoading}
+              releases={releases}
+              widget={widget}
+              router={router}
+            />
           </WidgetWrapper>
         ))}
       </Widgets>
@@ -35,7 +34,6 @@ class Dashboard extends AsyncView {
   }
 }
 export default Dashboard;
-export {Dashboard};
 
 const Widgets = styled('div')`
   display: flex;
@@ -43,5 +41,7 @@ const Widgets = styled('div')`
 `;
 const WidgetWrapper = styled('div')`
   width: 50%;
-  padding: ${space(1)};
+  :nth-child(odd) {
+    padding-right: ${space(2)};
+  }
 `;

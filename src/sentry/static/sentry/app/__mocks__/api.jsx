@@ -12,6 +12,10 @@ const respond = (isAsync, fn, ...args) => {
   }
 };
 
+const DEFAULT_MOCK_RESPONSE_OPTIONS = {
+  predicate: () => true,
+};
+
 class Client {
   static mockResponses = [];
 
@@ -20,8 +24,8 @@ class Client {
   }
 
   // Returns a jest mock that represents Client.request calls
-  static addMockResponse(response) {
-    let mock = jest.fn();
+  static addMockResponse(response, options = DEFAULT_MOCK_RESPONSE_OPTIONS) {
+    const mock = jest.fn();
     Client.mockResponses.unshift([
       {
         statusCode: 200,
@@ -32,14 +36,19 @@ class Client {
         headers: response.headers || {},
       },
       mock,
+      options.predicate,
     ]);
 
     return mock;
   }
 
   static findMockResponse(url, options) {
-    return Client.mockResponses.find(([response]) => {
-      return url === response.url && (options.method || 'GET') === response.method;
+    return Client.mockResponses.find(([response, mock, predicate]) => {
+      const matchesURL = url === response.url;
+      const matchesMethod = (options.method || 'GET') === response.method;
+      const matchesPredicate = predicate(url, options);
+
+      return matchesURL && matchesMethod && matchesPredicate;
     });
   }
 
@@ -54,7 +63,9 @@ class Client {
 
   wrapCallback(id, error) {
     return (...args) => {
-      if (this.hasProjectBeenRenamed(...args)) return;
+      if (this.hasProjectBeenRenamed(...args)) {
+        return;
+      }
       respond(Client.mockAsync, error, ...args);
     };
   }
@@ -74,7 +85,7 @@ class Client {
   }
 
   request(url, options) {
-    let [response, mock] = Client.findMockResponse(url, options) || [];
+    const [response, mock] = Client.findMockResponse(url, options) || [];
 
     if (!response) {
       // Endpoints need to be mocked
@@ -92,7 +103,7 @@ class Client {
 
       if (response.statusCode !== 200) {
         response.callCount++;
-        let resp = {
+        const resp = {
           status: response.statusCode,
           responseText: JSON.stringify(body),
           responseJSON: body,

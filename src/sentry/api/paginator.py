@@ -25,6 +25,10 @@ MAX_LIMIT = 100
 MAX_HITS_LIMIT = 1000
 
 
+class BadPaginationError(Exception):
+    pass
+
+
 class BasePaginator(object):
     def __init__(self, queryset, order_by=None, max_limit=MAX_LIMIT, on_results=None):
         if order_by:
@@ -102,7 +106,7 @@ class BasePaginator(object):
     def value_from_cursor(self, cursor):
         raise NotImplementedError
 
-    def get_result(self, limit=100, cursor=None, count_hits=False):
+    def get_result(self, limit=100, cursor=None, count_hits=False, known_hits=None):
         # cursors are:
         #   (identifier(integer), row offset, is_prev)
         if cursor is None:
@@ -121,6 +125,8 @@ class BasePaginator(object):
         # the key is not unique
         if count_hits:
             hits = self.count_hits(MAX_HITS_LIMIT)
+        elif known_hits is not None:
+            hits = known_hits
         else:
             hits = None
 
@@ -211,11 +217,13 @@ class DateTimePaginator(BasePaginator):
 # and are only useful for polling situations. The OffsetPaginator ignores them
 # entirely and uses standard paging
 class OffsetPaginator(object):
-    def __init__(self, queryset, order_by=None, max_limit=MAX_LIMIT, on_results=None):
+    def __init__(self, queryset, order_by=None, max_limit=MAX_LIMIT,
+                 max_offset=None, on_results=None):
         self.key = order_by if order_by is None or isinstance(
             order_by, (list, tuple, set)) else (order_by, )
         self.queryset = queryset
         self.max_limit = max_limit
+        self.max_offset = max_offset
         self.on_results = on_results
 
     def get_result(self, limit=100, cursor=None):
@@ -233,6 +241,9 @@ class OffsetPaginator(object):
         page = cursor.offset
         offset = cursor.offset * cursor.value
         stop = offset + (cursor.value or limit) + 1
+
+        if self.max_offset is not None and offset >= self.max_offset:
+            raise BadPaginationError('Pagination offset too large')
 
         results = list(queryset[offset:stop])
         if cursor.value != limit:
@@ -293,7 +304,7 @@ class SequencePaginator(object):
         self.max_limit = max_limit
         self.on_results = on_results
 
-    def get_result(self, limit, cursor=None, count_hits=False):
+    def get_result(self, limit, cursor=None, count_hits=False, known_hits=None):
         limit = min(limit, self.max_limit)
 
         if cursor is None:
@@ -343,12 +354,19 @@ class SequencePaginator(object):
         if self.on_results:
             results = self.on_results(results)
 
+        if known_hits is not None:
+            hits = min(known_hits, MAX_HITS_LIMIT)
+        elif count_hits:
+            hits = min(len(self.scores), MAX_HITS_LIMIT)
+        else:
+            hits = None
+
         return CursorResult(
             results,
             prev=prev_cursor,
             next=next_cursor,
-            hits=min(len(self.scores), MAX_HITS_LIMIT) if count_hits else None,
-            max_hits=MAX_HITS_LIMIT if count_hits else None,
+            hits=hits,
+            max_hits=MAX_HITS_LIMIT if hits is not None else None,
         )
 
 

@@ -57,7 +57,6 @@ class TagStorage(Service):
 
         'get_group_ids_for_users',
         'get_group_tag_values_for_users',
-        'get_group_ids_for_search_filter',
 
         'get_group_tag_keys_and_top_values',
 
@@ -67,7 +66,6 @@ class TagStorage(Service):
         'get_group_tag_value_iter',
 
         'get_group_tag_value_qs',
-        'get_event_tag_qs',
     ])
 
     __write_methods__ = frozenset([
@@ -89,6 +87,8 @@ class TagStorage(Service):
         'incr_group_tag_value_times_seen',
         'update_group_tag_key_values_seen',
         'update_group_for_events',
+
+        'delay_index_event_tags',
     ])
 
     __all__ = frozenset([
@@ -214,9 +214,12 @@ class TagStorage(Service):
         """
         raise NotImplementedError
 
-    def get_tag_keys(self, project_id, environment_id, status=TagKeyStatus.VISIBLE):
+    def get_tag_keys(
+        self, project_id, environment_id, status=TagKeyStatus.VISIBLE,
+        include_values_seen=False,
+    ):
         """
-        >>> get_tag_key(1, 2)
+        >>> get_tag_keys(1, 2)
         """
         raise NotImplementedError
 
@@ -247,9 +250,9 @@ class TagStorage(Service):
         """
         raise NotImplementedError
 
-    def get_group_tag_keys(self, project_id, group_id, environment_id, limit=None, keys=None):
+    def get_group_tag_keys(self, project_id, group_id, environment_ids, limit=None, keys=None):
         """
-        >>> get_group_tag_key(1, 2, 3)
+        >>> get_group_tag_key(1, 2, [3])
         """
         raise NotImplementedError
 
@@ -304,7 +307,7 @@ class TagStorage(Service):
         """
         raise NotImplementedError
 
-    def get_group_event_filter(self, project_id, group_id, environment_id, tags):
+    def get_group_event_filter(self, project_id, group_id, environment_ids, tags, start, end):
         """
         >>> get_group_event_filter(1, 2, 3, {'key1': 'value1', 'key2': 'value2'})
         """
@@ -345,15 +348,11 @@ class TagStorage(Service):
         """
         raise NotImplementedError
 
-    def get_event_tag_qs(self, project_id, environment_id, key, value):
-        """
-        >>> get_event_tag_qs(1, 2, 'environment', 'prod')
-        """
-        raise NotImplementedError
-
-    def get_groups_user_counts(self, project_ids, group_ids, environment_ids):
+    def get_groups_user_counts(self, project_ids, group_ids, environment_ids,
+                               start=None, end=None):
         """
         >>> get_groups_user_counts([1, 2], [2, 3], [4, 5])
+        `start` and `end` are only used by the snuba backend
         """
         raise NotImplementedError
 
@@ -400,13 +399,6 @@ class TagStorage(Service):
         """
         raise NotImplementedError
 
-    def get_group_ids_for_search_filter(
-            self, project_id, environment_id, tags, candidates=None, limit=1000):
-        """
-        >>> get_group_ids_for_search_filter(1, 2, [('key1', 'value1'), ('key2', 'value2')])
-        """
-        raise NotImplementedError
-
     def update_group_for_events(self, project_id, event_ids, destination_id):
         """
         >>> update_group_for_events(1, [2, 3], 4)
@@ -420,11 +412,18 @@ class TagStorage(Service):
         raise NotImplementedError
 
     def get_group_tag_keys_and_top_values(
-            self, project_id, group_id, environment_id, keys=None, value_limit=TOP_VALUES_DEFAULT_LIMIT):
+            self, project_id, group_id, environment_ids, keys=None, value_limit=TOP_VALUES_DEFAULT_LIMIT, **kwargs):
+
+        # only the snuba backend supports multi env, and that overrides this method
+        if environment_ids and len(environment_ids) > 1:
+            raise NotImplementedError
 
         # If keys is unspecified, we will grab all tag keys for this group.
-        tag_keys = self.get_group_tag_keys(project_id, group_id, environment_id, keys=keys)
+        tag_keys = self.get_group_tag_keys(
+            project_id, group_id, environment_ids, keys=keys
+        )
 
+        environment_id = environment_ids[0] if environment_ids else None
         for tk in tag_keys:
             tk.top_values = self.get_top_group_tag_values(
                 project_id, group_id, environment_id, tk.key, limit=value_limit)
@@ -433,3 +432,7 @@ class TagStorage(Service):
                     project_id, group_id, environment_id, tk.key)
 
         return tag_keys
+
+    def delay_index_event_tags(self, organization_id, project_id, group_id,
+                               environment_id, event_id, tags, date_added):
+        raise NotImplementedError

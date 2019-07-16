@@ -13,8 +13,6 @@ import SentryTypes from 'app/sentryTypes';
 import overflowEllipsis from 'app/styles/overflowEllipsis';
 import space from 'app/styles/space';
 
-import EventsContext from './utils/eventsContext';
-
 class EventsTableBody extends React.PureComponent {
   static propTypes = {
     events: PropTypes.array,
@@ -28,26 +26,28 @@ class EventsTableBody extends React.PureComponent {
 
     return events.map((event, eventIdx) => {
       const project = projectsMap.get(event.projectID);
-      const trimmedMessage = event.message.split('\n')[0].substr(0, 100);
+      const trimmedMessage = event.title || event.message.split('\n')[0].substr(0, 100);
+      const eventLink = `/organizations/${organization.slug}/projects/${
+        project.slug
+      }/events/${event.eventID}/`;
+
       return (
-        <TableRow key={`${project.slug}-${event.eventID}`} first={eventIdx == 0}>
+        <TableRow key={`${project.slug}-${event.eventID}`} first={eventIdx === 0}>
           <TableData>
             <EventTitle>
-              <Link to={`/${organization.slug}/${project.slug}/events/${event.eventID}/`}>
-                {trimmedMessage}
-              </Link>
+              <Link to={eventLink}>{trimmedMessage}</Link>
             </EventTitle>
           </TableData>
 
+          <TableData>{event['event.type']}</TableData>
+
           <TableData>
-            <Project to={`/${organization.slug}/${project.slug}/`}>
-              <IdBadge
-                project={project}
-                avatarSize={16}
-                displayName={<span>{project.slug}</span>}
-                avatarProps={{consistentWidth: true}}
-              />
-            </Project>
+            <IdBadge
+              project={project}
+              avatarSize={16}
+              displayName={<span>{project.slug}</span>}
+              avatarProps={{consistentWidth: true}}
+            />
           </TableData>
 
           <TableData>
@@ -76,19 +76,13 @@ class EventsTable extends React.Component {
 
     events: PropTypes.array,
     organization: SentryTypes.Organization,
+    projects: PropTypes.arrayOf(SentryTypes.Project),
     utc: PropTypes.bool,
 
     // When Table is in loading state due to chart zoom but has
     // completed its new API request
     onUpdateComplete: PropTypes.func,
   };
-
-  constructor(props) {
-    super(props);
-    this.projectsMap = new Map(
-      props.organization.projects.map(project => [project.id, project])
-    );
-  }
 
   shouldComponentUpdate(nextProps) {
     // Update if any of these "loading"-type props change so we can display loader
@@ -119,6 +113,13 @@ class EventsTable extends React.Component {
     }
   }
 
+  get projectsMap() {
+    const {organization, projects} = this.props;
+    const projectList = projects || organization.projects;
+
+    return new Map(projectList.map(project => [project.id, project]));
+  }
+
   render() {
     const {events, organization, loading, reloading, zoomChanged, utc} = this.props;
     const hasEvents = events && !!events.length;
@@ -128,13 +129,18 @@ class EventsTable extends React.Component {
         <PanelHeader>
           <TableLayout>
             <div>{t('Event')}</div>
+            <div>{t('Event Type')}</div>
             <div>{t('Project')}</div>
             <div>{t('User')}</div>
             <div>{t('Time')}</div>
           </TableLayout>
         </PanelHeader>
         {loading && <LoadingIndicator />}
-        {!loading && !hasEvents && <EmptyStateWarning>No events</EmptyStateWarning>}
+        {!loading && !hasEvents && (
+          <EmptyStateWarning>
+            <p>{t('No events')}</p>
+          </EmptyStateWarning>
+        )}
         {hasEvents && (
           <StyledPanelBody>
             {(reloading || zoomChanged) && <StyledLoadingIndicator overlay />}
@@ -151,16 +157,7 @@ class EventsTable extends React.Component {
   }
 }
 
-class EventsTableContainer extends React.Component {
-  render() {
-    return (
-      <EventsContext.Consumer>
-        {context => <EventsTable {...context} {...this.props} />}
-      </EventsContext.Consumer>
-    );
-  }
-}
-export default withRouter(EventsTableContainer);
+export default withRouter(EventsTable);
 export {EventsTable};
 
 const StyledPanelBody = styled(PanelBody)`
@@ -170,7 +167,7 @@ const StyledPanelBody = styled(PanelBody)`
 
 const TableLayout = styled('div')`
   display: grid;
-  grid-template-columns: 0.8fr 0.15fr 0.25fr 200px;
+  grid-template-columns: 0.8fr 0.15fr 0.15fr 0.25fr 200px;
   grid-column-gap: ${space(1.5)};
   width: 100%;
 `;
@@ -196,12 +193,6 @@ const TableData = styled('div')`
 
 const EventTitle = styled(TableData)`
   padding-right: ${space(2)};
-  ${overflowEllipsis};
-`;
-
-const Project = styled(Link)`
-  display: flex;
-  color: ${p => p.theme.gray4};
   ${overflowEllipsis};
 `;
 

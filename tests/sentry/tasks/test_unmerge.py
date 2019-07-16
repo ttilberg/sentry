@@ -194,7 +194,7 @@ class UnmergeTestCase(TestCase):
         def shift(i):
             return timedelta(seconds=1 << i)
 
-        now = timezone.now().replace(microsecond=0) - shift(16)
+        now = timezone.now() - shift(16)
 
         project = self.create_project()
         source = self.create_group(project)
@@ -263,7 +263,7 @@ class UnmergeTestCase(TestCase):
                         organization_id=project.organization_id,
                         name=environment
                     ),
-                    tags=event.get_tags(),
+                    tags=event.tags,
                 )
 
             EventMapping.objects.create(
@@ -325,7 +325,7 @@ class UnmergeTestCase(TestCase):
 
         assert set(
             [(gtk.key, gtk.values_seen)
-             for gtk in tagstore.get_group_tag_keys(source.project_id, source.id, production_environment.id)]
+             for gtk in tagstore.get_group_tag_keys(source.project_id, source.id, [production_environment.id])]
         ) == set([
             (u'color', 3),
             (u'environment', 1),
@@ -463,7 +463,7 @@ class UnmergeTestCase(TestCase):
 
         assert set(
             [(gtk.key, gtk.values_seen)
-             for gtk in tagstore.get_group_tag_keys(source.project_id, source.id, production_environment.id)]
+             for gtk in tagstore.get_group_tag_keys(source.project_id, source.id, [production_environment.id])]
         ) == set([
             (u'color', 3),
             (u'environment', 1),
@@ -526,7 +526,7 @@ class UnmergeTestCase(TestCase):
         ])
 
         assert set([(gtk.key, gtk.values_seen)
-                    for gtk in tagstore.get_group_tag_keys(source.project_id, source.id, production_environment.id)]
+                    for gtk in tagstore.get_group_tag_keys(source.project_id, source.id, [production_environment.id])]
                    ) == set(
             [
                 (u'color', 3),

@@ -1,6 +1,5 @@
-/*eslint no-use-before-define: ["error", { "functions": false }]*/
 import React from 'react';
-import {uniq} from 'lodash';
+import {uniq, partition} from 'lodash';
 import moment from 'moment-timezone';
 
 import {Client} from 'app/api';
@@ -8,17 +7,19 @@ import {DEFAULT_STATS_PERIOD} from 'app/constants';
 import {t} from 'app/locale';
 
 import {openModal} from 'app/actionCreators/modal';
+import ConfigStore from 'app/stores/configStore';
 
 import MissingProjectWarningModal from './missingProjectWarningModal';
-import {COLUMNS, PROMOTED_TAGS, SPECIAL_TAGS} from './data';
+import {COLUMNS, PROMOTED_TAGS, SPECIAL_TAGS, HIDDEN_TAGS} from './data';
 import {isValidAggregation} from './aggregations/utils';
+
+const API_LIMIT = 10000;
 
 const DEFAULTS = {
   projects: [],
   fields: ['id', 'issue.id', 'project.name', 'platform', 'timestamp'],
   conditions: [],
   aggregations: [],
-  range: DEFAULT_STATS_PERIOD,
   orderby: '-timestamp',
   limit: 1000,
 };
@@ -38,10 +39,24 @@ function applyDefaults(query) {
  * initialization.
  */
 export default function createQueryBuilder(initial = {}, organization) {
+  const api = new Client();
   let query = applyDefaults(initial);
-  const defaultProjects = organization.projects
-    .filter(projects => projects.isMember)
-    .map(project => parseInt(project.id, 10));
+
+  if (!query.start && !query.end && !query.range) {
+    query.range = DEFAULT_STATS_PERIOD;
+  }
+
+  const defaultProjects = organization.projects.filter(projects => projects.isMember);
+
+  const defaultProjectIds = getProjectIds(defaultProjects);
+
+  const hasGlobalProjectAccess =
+    ConfigStore.get('user').isSuperuser || organization.access.includes('org:admin');
+
+  const projectsToFetchTags = getProjectIds(
+    hasGlobalProjectAccess ? organization.projects : defaultProjects
+  );
+
   const columns = COLUMNS.map(col => ({...col, isTag: false}));
   let tags = [];
 
@@ -50,6 +65,8 @@ export default function createQueryBuilder(initial = {}, organization) {
     getExternal,
     updateField,
     fetch,
+    fetchWithoutLimit,
+    cancelRequests,
     getQueryByType,
     getColumns,
     load,
@@ -65,7 +82,7 @@ export default function createQueryBuilder(initial = {}, organization) {
    */
   function load() {
     return fetch({
-      projects: defaultProjects,
+      projects: projectsToFetchTags,
       fields: ['tags_key'],
       aggregations: [['count()', null, 'count']],
       orderby: '-count',
@@ -73,10 +90,12 @@ export default function createQueryBuilder(initial = {}, organization) {
       turbo: true,
     })
       .then(res => {
-        tags = res.data.map(tag => {
-          const type = SPECIAL_TAGS[tags.tags_key] || 'string';
-          return {name: tag.tags_key, type, isTag: true};
-        });
+        tags = res.data
+          .filter(tag => !HIDDEN_TAGS.includes(tag.tags_key))
+          .map(tag => {
+            const type = SPECIAL_TAGS[tags.tags_key] || 'string';
+            return {name: tag.tags_key, type, isTag: true};
+          });
       })
       .catch(err => {
         tags = PROMOTED_TAGS.map(tag => {
@@ -104,7 +123,15 @@ export default function createQueryBuilder(initial = {}, organization) {
    */
   function getExternal() {
     // Default to all projects if none is selected
-    const projects = query.projects.length ? query.projects : defaultProjects;
+    const projects = query.projects.length ? query.projects : defaultProjectIds;
+
+    // Default to DEFAULT_STATS_PERIOD when no date range selected (either relative or absolute)
+    const {range, start, end} = query;
+    const hasAbsolute = start && end;
+    const daterange = {
+      ...(hasAbsolute && {start, end}),
+      ...(range ? {range} : !hasAbsolute && {range: DEFAULT_STATS_PERIOD}),
+    };
 
     // Default to all fields if there are none selected, and no aggregation is
     // specified
@@ -119,6 +146,7 @@ export default function createQueryBuilder(initial = {}, organization) {
 
     return {
       ...query,
+      ...daterange,
       projects,
       fields,
     };
@@ -175,9 +203,10 @@ export default function createQueryBuilder(initial = {}, organization) {
    * @returns {Promise<Object|Error>}
    */
   function fetch(data = getExternal(), cursor = '0:0:1') {
-    const api = new Client();
     const limit = data.limit || 1000;
-    const endpoint = `/organizations/${organization.slug}/discover/query/?per_page=${limit}&cursor=${cursor}`;
+    const endpoint = `/organizations/${
+      organization.slug
+    }/discover/query/?per_page=${limit}&cursor=${cursor}`;
 
     // Reject immediately if no projects are available
     if (!data.projects.length) {
@@ -206,6 +235,47 @@ export default function createQueryBuilder(initial = {}, organization) {
   }
 
   /**
+   * Fetches either the query provided as an argument or the current query state
+   * if this is not provided and returns the result wrapped in a promise
+   *
+   * This is similar to `fetch` but does not support pagination and mirrors the API limit
+   *
+   * @param {Object} [data] Optional field to provide data to fetch
+   * @returns {Promise<Object|Error>}
+   */
+  function fetchWithoutLimit(data = getExternal()) {
+    const endpoint = `/organizations/${organization.slug}/discover/query/`;
+
+    // Reject immediately if no projects are available
+    if (!data.projects.length) {
+      return Promise.reject(new Error(t('No projects selected')));
+    }
+
+    if (typeof data.limit === 'number') {
+      if (data.limit < 1 || data.limit > API_LIMIT) {
+        return Promise.reject(new Error(t('Invalid limit parameter')));
+      }
+    }
+
+    if (moment.utc(data.start).isAfter(moment.utc(data.end))) {
+      return Promise.reject(new Error('Start date cannot be after end date'));
+    }
+
+    return api.requestPromise(endpoint, {method: 'POST', data}).catch(() => {
+      throw new Error(t('Error with query'));
+    });
+  }
+
+  /**
+   * Cancels any in-flight API requests made via `fetch` or `fetchWithoutLimit`
+   *
+   * @returns {Void}
+   */
+  function cancelRequests() {
+    api.clear();
+  }
+
+  /**
    * Get the actual query to be run for each visualization type
    *
    * @param {Object} originalQuery Original query input by user (external query representation)
@@ -219,7 +289,7 @@ export default function createQueryBuilder(initial = {}, organization) {
         groupby: ['time'],
         rollup: 60 * 60 * 24,
         orderby: '-time',
-        limit: 1000,
+        limit: 5000,
       };
     }
 
@@ -250,23 +320,31 @@ export default function createQueryBuilder(initial = {}, organization) {
    * Resets the query to defaults or the query provided
    * Displays a warning if user does not have access to any project in the query
    *
+   * @param {Object} [q] optional query to reset to
    * @returns {Void}
    */
   function reset(q = {}) {
-    const invalidProjects = (q.projects || []).filter(
-      project => !defaultProjects.includes(project)
+    const [validProjects, invalidProjects] = partition(q.projects || [], project =>
+      defaultProjectIds.includes(project)
     );
 
     if (invalidProjects.length) {
       openModal(deps => (
         <MissingProjectWarningModal
           organization={organization}
-          projects={invalidProjects}
+          validProjects={validProjects}
+          invalidProjects={invalidProjects}
           {...deps}
         />
       ));
     }
 
+    q.projects = validProjects;
+
     query = applyDefaults(q);
   }
+}
+
+function getProjectIds(projects) {
+  return projects.map(project => parseInt(project.id, 10));
 }

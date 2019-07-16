@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 from datetime import timedelta
 
+from django.db.models import F
 from django.test import RequestFactory
 from django.utils import timezone
 from exam import fixture
@@ -13,9 +14,10 @@ from sentry.api.bases.organization import (
     OrganizationEndpoint,
     OrganizationPermission,
 )
-from sentry.api.exceptions import ResourceDoesNotExist
+from sentry.api.exceptions import ResourceDoesNotExist, TwoFactorRequired
 from sentry.api.utils import MAX_STATS_PERIOD
-from sentry.models import ApiKey
+from sentry.auth.access import from_request, NoAccess
+from sentry.models import ApiKey, Organization, TotpInterface
 from sentry.testutils import TestCase
 
 
@@ -41,6 +43,10 @@ class OrganizationPermissionBase(TestCase):
 
 
 class OrganizationPermissionTest(OrganizationPermissionBase):
+    def org_require_2fa(self):
+        self.org.update(flags=F('flags').bitor(Organization.flags.require_2fa))
+        assert self.org.flags.require_2fa.is_set is True
+
     def test_regular_user(self):
         user = self.create_user()
         assert not self.has_object_perm('GET', self.org, user=user)
@@ -93,6 +99,35 @@ class OrganizationPermissionTest(OrganizationPermissionBase):
         )
         assert not self.has_object_perm('PUT', self.org, auth=key)
 
+    def test_org_requires_2fa_with_superuser(self):
+        self.org_require_2fa()
+        user = self.create_user(is_superuser=True)
+        assert self.has_object_perm('GET', self.org, user=user, is_superuser=True)
+
+    def test_org_requires_2fa_with_enrolled_user(self):
+        self.org_require_2fa()
+        user = self.create_user()
+        self.create_member(
+            user=user,
+            organization=self.org,
+            role='member',
+        )
+
+        TotpInterface().enroll(user)
+        assert self.has_object_perm('GET', self.org, user=user)
+
+    def test_org_requires_2fa_with_unenrolled_user(self):
+        self.org_require_2fa()
+        user = self.create_user()
+        self.create_member(
+            user=user,
+            organization=self.org,
+            role='member',
+        )
+
+        with self.assertRaises(TwoFactorRequired):
+            self.has_object_perm('GET', self.org, user=user)
+
 
 class BaseOrganizationEndpointTest(TestCase):
 
@@ -103,6 +138,10 @@ class BaseOrganizationEndpointTest(TestCase):
     @fixture
     def user(self):
         return self.create_user('tester@test.com')
+
+    @fixture
+    def member(self):
+        return self.create_user('member@test.com')
 
     @fixture
     def owner(self):
@@ -123,6 +162,7 @@ class BaseOrganizationEndpointTest(TestCase):
         if user is None:
             user = self.user
         request.user = user
+        request.access = from_request(request, self.org)
         return request
 
 
@@ -132,6 +172,7 @@ class GetProjectIdsTest(BaseOrganizationEndpointTest):
         self.team_1 = self.create_team(organization=self.org)
         self.team_2 = self.create_team(organization=self.org)
         self.team_3 = self.create_team(organization=self.org)
+        self.create_team_membership(user=self.member, team=self.team_2)
         self.project_1 = self.create_project(
             organization=self.org,
             teams=[self.team_1, self.team_3],
@@ -146,31 +187,41 @@ class GetProjectIdsTest(BaseOrganizationEndpointTest):
         expected_projects,
         user=None,
         project_ids=None,
-        include_allow_joinleave=False,
+        include_all_accessible=False,
         active_superuser=False,
     ):
         request_args = {}
         if project_ids:
             request_args['project'] = project_ids
-        result = self.endpoint.get_project_ids(
+
+        result = self.endpoint.get_projects(
             self.build_request(user=user, active_superuser=active_superuser, **request_args),
             self.org,
-            include_allow_joinleave=include_allow_joinleave,
+            include_all_accessible=include_all_accessible,
         )
-        assert set([p.id for p in expected_projects]) == set(result)
+        assert set([p.id for p in expected_projects]) == set(p.id for p in result)
 
     def test_no_ids_no_teams(self):
         # Should get nothing if not part of the org
         self.run_test([])
         # Should get everything if super user
         self.run_test([self.project_1, self.project_2], user=self.user, active_superuser=True)
-        # owner only sees projects they have direct access to
+
+        # owner does not see projects they aren't members of if not included in query params
         self.run_test([], user=self.owner)
-        # Should get everything if org is public
+
+        # owner sees projects they have access to if they're included as query params
+        self.run_test(
+            [self.project_1, self.project_2],
+            user=self.owner,
+            project_ids=[self.project_1.id, self.project_2.id],
+        )
+        # Should get everything if org is public and ids are specified
         self.org.flags.allow_joinleave = True
         self.org.save()
-        self.run_test([self.project_1, self.project_2], include_allow_joinleave=True)
-        self.run_test([], include_allow_joinleave=False)
+        self.run_test([self.project_1, self.project_2], user=self.member,
+                      project_ids=[self.project_1.id, self.project_2.id])
+        self.run_test([], include_all_accessible=False)
 
     def test_no_ids_teams(self):
         membership = self.create_team_membership(user=self.user, team=self.team_1)
@@ -185,22 +236,26 @@ class GetProjectIdsTest(BaseOrganizationEndpointTest):
 
         self.run_test([self.project_1], user=self.user, project_ids=[
                       self.project_1.id], active_superuser=True)
-        # owner only sees projects they have direct access to
-        with self.assertRaises(PermissionDenied):
-            self.run_test([self.project_1], user=self.owner, project_ids=[self.project_1.id])
+
+        # owner should see project if they explicitly request it, even if the don't
+        # have membership
+        self.run_test([self.project_1], user=self.owner, project_ids=[self.project_1.id])
 
         self.org.flags.allow_joinleave = True
         self.org.save()
         self.run_test(
             [self.project_1],
+            user=self.member,
             project_ids=[self.project_1.id],
-            include_allow_joinleave=True,
         )
+
+        self.org.flags.allow_joinleave = False
+        self.org.save()
         with self.assertRaises(PermissionDenied):
             self.run_test(
                 [self.project_1],
+                user=self.member,
                 project_ids=[self.project_1.id],
-                include_allow_joinleave=False,
             )
 
     def test_ids_teams(self):
@@ -218,11 +273,12 @@ class GetProjectIdsTest(BaseOrganizationEndpointTest):
     def test_none_user(self):
         request = RequestFactory().get('/')
         request.session = {}
-        result = self.endpoint.get_project_ids(request, self.org)
+        request.access = NoAccess()
+        result = self.endpoint.get_projects(request, self.org)
         assert [] == result
 
         request.user = None
-        result = self.endpoint.get_project_ids(request, self.org)
+        result = self.endpoint.get_projects(request, self.org)
         assert [] == result
 
 
@@ -295,6 +351,7 @@ class GetFilterParamsTest(BaseOrganizationEndpointTest):
             request_args['end'] = end
         if stats_period:
             request_args['statsPeriod'] = stats_period
+
         result = self.endpoint.get_filter_params(
             self.build_request(user=user, active_superuser=active_superuser, **request_args),
             self.org,

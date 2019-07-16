@@ -2,7 +2,6 @@ from __future__ import absolute_import
 import posixpath
 
 from rest_framework import serializers
-from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
 from sentry.api.base import DocSection
@@ -60,7 +59,7 @@ class OrganizationReleaseFileDetailsEndpoint(OrganizationReleasesBaseEndpoint):
             raise ResourceDoesNotExist
 
         if not self.has_release_permission(request, organization, release):
-            raise PermissionDenied
+            raise ResourceDoesNotExist
 
         try:
             releasefile = ReleaseFile.objects.get(
@@ -102,7 +101,7 @@ class OrganizationReleaseFileDetailsEndpoint(OrganizationReleasesBaseEndpoint):
             raise ResourceDoesNotExist
 
         if not self.has_release_permission(request, organization, release):
-            raise PermissionDenied
+            raise ResourceDoesNotExist
 
         try:
             releasefile = ReleaseFile.objects.get(
@@ -112,12 +111,12 @@ class OrganizationReleaseFileDetailsEndpoint(OrganizationReleasesBaseEndpoint):
         except ReleaseFile.DoesNotExist:
             raise ResourceDoesNotExist
 
-        serializer = ReleaseFileSerializer(data=request.DATA)
+        serializer = ReleaseFileSerializer(data=request.data)
 
         if not serializer.is_valid():
             return Response(serializer.errors, status=400)
 
-        result = serializer.object
+        result = serializer.validated_data
 
         releasefile.update(
             name=result['name'],
@@ -149,7 +148,7 @@ class OrganizationReleaseFileDetailsEndpoint(OrganizationReleasesBaseEndpoint):
             raise ResourceDoesNotExist
 
         if not self.has_release_permission(request, organization, release):
-            raise PermissionDenied
+            raise ResourceDoesNotExist
 
         try:
             releasefile = ReleaseFile.objects.get(

@@ -15,15 +15,17 @@ import itertools
 from django.db import models, IntegrityError, transaction
 from django.db.models import F
 from django.utils import timezone
-from jsonfield import JSONField
 from time import time
 
 from sentry.app import locks
 from sentry.db.models import (
-    ArrayField, BoundedPositiveIntegerField, FlexibleForeignKey, Model, sane_repr
+    ArrayField, BoundedPositiveIntegerField, FlexibleForeignKey,
+    JSONField, Model, sane_repr
 )
 
+from sentry.constants import BAD_RELEASE_CHARS, COMMIT_RANGE_DELIMITER
 from sentry.models import CommitFileChange
+from sentry.signals import issue_resolved
 
 from sentry.utils import metrics
 from sentry.utils.cache import cache
@@ -34,9 +36,7 @@ logger = logging.getLogger(__name__)
 
 _sha1_re = re.compile(r'^[a-f0-9]{40}$')
 _dotted_path_prefix_re = re.compile(r'^([a-zA-Z][a-zA-Z0-9-]+)(\.[a-zA-Z][a-zA-Z0-9-]+)+-')
-BAD_RELEASE_CHARS = '\n\f\t/'
 DB_VERSION_LENGTH = 250
-COMMIT_RANGE_DELIMITER = '..'
 
 
 class ReleaseProject(Model):
@@ -96,7 +96,8 @@ class Release(Model):
     @staticmethod
     def is_valid_version(value):
         return not (any(c in value for c in BAD_RELEASE_CHARS)
-                    or value in ('.', '..') or not value)
+                    or value in ('.', '..') or not value
+                    or value.lower() == 'latest')
 
     @classmethod
     def get_cache_key(cls, organization_id, version):
@@ -416,18 +417,24 @@ class Release(Model):
                     else:
                         author = authors[author_email]
 
-                    commit_data = {
-                        'message': data.get('message'),
-                        'date_added': data.get('timestamp') or timezone.now(),
-                    }
-                    # If we didn't get an author don't overwrite an existing one.
+                    commit_data = {}
+                    defaults = {}
+
+                    # Update/set message and author if they are provided.
                     if author is not None:
                         commit_data['author'] = author
+                    if 'message' in data:
+                        commit_data['message'] = data['message']
+                    if 'timestamp' in data:
+                        commit_data['date_added'] = data['timestamp']
+                    else:
+                        defaults['date_added'] = timezone.now()
 
                     commit, created = Commit.objects.create_or_update(
                         organization_id=self.organization_id,
                         repository_id=repo.id,
                         key=data['id'],
+                        defaults=defaults,
                         values=commit_data)
                     if not created:
                         commit = Commit.objects.get(
@@ -561,10 +568,20 @@ class Release(Model):
                         'actor_id': actor.id if actor else None,
                     },
                 )
-                Group.objects.filter(
+                group = Group.objects.get(
                     id=group_id,
-                ).update(status=GroupStatus.RESOLVED)
+                )
+                group.update(status=GroupStatus.RESOLVED)
                 metrics.incr('group.resolved', instance='in_commit', skip_internal=True)
+
+            issue_resolved.send_robust(
+                organization_id=self.organization_id,
+                user=actor,
+                group=group,
+                project=group.project,
+                resolution_type='with_commit',
+                sender=type(self),
+            )
 
             kick_off_status_syncs.apply_async(kwargs={
                 'project_id': group_project_lookup[group_id],

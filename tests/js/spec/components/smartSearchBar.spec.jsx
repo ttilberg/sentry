@@ -1,5 +1,6 @@
 import React from 'react';
 import {shallow, mount} from 'enzyme';
+import {Client} from 'app/api';
 
 import {SmartSearchBar, addSpace, removeSpace} from 'app/components/smartSearchBar';
 import TagStore from 'app/stores/tagStore';
@@ -33,23 +34,18 @@ describe('removeSpace()', function() {
 });
 
 describe('SmartSearchBar', function() {
-  let sandbox;
-  let options;
+  let options, organization, supportedTags;
   let environmentTagValuesMock;
-  let supportedTags;
-  let tagValuesMock = jest.fn(() => Promise.resolve([]));
+  const tagValuesMock = jest.fn(() => Promise.resolve([]));
 
   beforeEach(function() {
     TagStore.reset();
     TagStore.onLoadTagsSuccess(TestStubs.Tags());
     tagValuesMock.mockClear();
     supportedTags = {};
+    organization = TestStubs.Organization({id: '123'});
 
-    sandbox = sinon.sandbox.create();
-
-    options = {
-      context: {organization: {id: '123'}},
-    };
+    options = TestStubs.routerContext([{organization}]);
 
     environmentTagValuesMock = MockApiClient.addMockResponse({
       url: '/projects/123/456/tags/environment/values/',
@@ -59,12 +55,11 @@ describe('SmartSearchBar', function() {
 
   afterEach(function() {
     MockApiClient.clearMockResponses();
-    sandbox.restore();
   });
 
   describe('componentWillReceiveProps()', function() {
     it('should add a space when setting state.query', function() {
-      let searchBar = shallow(
+      const searchBar = shallow(
         <SmartSearchBar supportedTags={supportedTags} query="one" />,
         options
       );
@@ -73,7 +68,7 @@ describe('SmartSearchBar', function() {
     });
 
     it('should update state.query if props.query is updated from outside', function() {
-      let searchBar = shallow(
+      const searchBar = shallow(
         <SmartSearchBar supportedTags={supportedTags} query="one" />,
         options
       );
@@ -84,7 +79,7 @@ describe('SmartSearchBar', function() {
     });
 
     it('should not reset user input if a noop props change happens', function() {
-      let searchBar = shallow(
+      const searchBar = shallow(
         <SmartSearchBar supportedTags={supportedTags} query="one" />,
         options
       );
@@ -96,7 +91,7 @@ describe('SmartSearchBar', function() {
     });
 
     it('should reset user input if a meaningful props change happens', function() {
-      let searchBar = shallow(
+      const searchBar = shallow(
         <SmartSearchBar supportedTags={supportedTags} query="one" />,
         options
       );
@@ -141,14 +136,14 @@ describe('SmartSearchBar', function() {
 
   describe('clearSearch()', function() {
     it('clears the query', function() {
-      let props = {
+      const props = {
         orgId: '123',
         projectId: '456',
         query: 'is:unresolved ruby',
         defaultQuery: 'is:unresolved',
         supportedTags,
       };
-      let searchBar = shallow(<SmartSearchBar {...props} />, options).instance();
+      const searchBar = shallow(<SmartSearchBar {...props} />, options).instance();
 
       searchBar.clearSearch();
 
@@ -156,24 +151,24 @@ describe('SmartSearchBar', function() {
     });
 
     it('calls onSearch()', async function() {
-      let props = {
+      const props = {
         orgId: '123',
         projectId: '456',
         query: 'is:unresolved ruby',
         defaultQuery: 'is:unresolved',
         supportedTags,
-        onSearch: sandbox.spy(),
+        onSearch: jest.fn(),
       };
-      let searchBar = shallow(<SmartSearchBar {...props} />, options).instance();
+      const searchBar = shallow(<SmartSearchBar {...props} />, options).instance();
 
       await searchBar.clearSearch();
-      expect(props.onSearch.calledWith('')).toBe(true);
+      expect(props.onSearch).toHaveBeenCalledWith('');
     });
   });
 
   describe('onQueryFocus()', function() {
     it('displays the drop down', function() {
-      let searchBar = shallow(
+      const searchBar = shallow(
         <SmartSearchBar
           orgId="123"
           projectId="456"
@@ -188,19 +183,37 @@ describe('SmartSearchBar', function() {
 
       expect(searchBar.state.dropdownVisible).toBe(true);
     });
+
+    it('displays dropdown in hasPinnedSearch mode', function() {
+      const searchBar = shallow(
+        <SmartSearchBar
+          orgId="123"
+          projectId="456"
+          supportedTags={supportedTags}
+          onGetTagValues={tagValuesMock}
+          hasPinnedSearch
+        />,
+        options
+      ).instance();
+      expect(searchBar.state.dropdownVisible).toBe(false);
+
+      searchBar.onQueryFocus();
+
+      expect(searchBar.state.dropdownVisible).toBe(true);
+    });
   });
 
   describe('onQueryBlur()', function() {
     it('hides the drop down', function() {
-      let searchBar = shallow(
+      const searchBar = shallow(
         <SmartSearchBar orgId="123" projectId="456" supportedTags={supportedTags} />,
         options
       ).instance();
       searchBar.state.dropdownVisible = true;
 
-      let clock = sandbox.useFakeTimers();
+      jest.useFakeTimers();
       searchBar.onQueryBlur();
-      clock.tick(201); // doesn't close until 200ms
+      jest.advanceTimersByTime(201); // doesn't close until 200ms
 
       expect(searchBar.state.dropdownVisible).toBe(false);
     });
@@ -209,28 +222,29 @@ describe('SmartSearchBar', function() {
   describe('onKeyUp()', function() {
     describe('escape', function() {
       it('blurs the input', function() {
-        let wrapper = shallow(
+        const wrapper = shallow(
           <SmartSearchBar orgId="123" projectId="456" supportedTags={supportedTags} />,
           options
         );
         wrapper.setState({dropdownVisible: true});
 
-        let instance = wrapper.instance();
-        sandbox.stub(instance, 'blur');
+        const instance = wrapper.instance();
+        jest.spyOn(instance, 'blur');
 
         wrapper.find('input').simulate('keyup', {key: 'Escape', keyCode: '27'});
 
-        expect(instance.blur.calledOnce).toBeTruthy();
+        expect(instance.blur).toHaveBeenCalledTimes(1);
       });
     });
   });
 
   describe('render()', function() {
     it('invokes onSearch() when submitting the form', function() {
-      let stubbedOnSearch = sandbox.spy();
-      let wrapper = mount(
+      const stubbedOnSearch = jest.fn();
+      const wrapper = mount(
         <SmartSearchBar
           onSearch={stubbedOnSearch}
+          organization={organization}
           orgId="123"
           projectId="456"
           query="is:unresolved"
@@ -243,123 +257,262 @@ describe('SmartSearchBar', function() {
         preventDefault() {},
       });
 
-      expect(stubbedOnSearch.calledWith('is:unresolved')).toBe(true);
+      expect(stubbedOnSearch).toHaveBeenCalledWith('is:unresolved');
     });
 
-    it('invokes onSearch() when search is cleared', function(done) {
-      let props = {
+    it('invokes onSearch() when search is cleared', async function() {
+      jest.useRealTimers();
+      const props = {
+        organization,
         orgId: '123',
         projectId: '456',
         query: 'is:unresolved',
         supportedTags,
-        onSearch: sandbox.spy(),
+        onSearch: jest.fn(),
       };
-      let wrapper = mount(<SmartSearchBar {...props} />, options);
+      const wrapper = mount(<SmartSearchBar {...props} />, options);
 
       wrapper.find('.search-clear-form').simulate('click');
 
-      setTimeout(function() {
-        expect(props.onSearch.calledWith('')).toBe(true);
-        done();
-      });
+      await tick();
+      expect(props.onSearch).toHaveBeenCalledWith('');
+    });
+
+    it('invokes onSearch() on submit in hasPinnedSearch mode', function() {
+      const stubbedOnSearch = jest.fn();
+      const wrapper = mount(
+        <SmartSearchBar
+          onSearch={stubbedOnSearch}
+          organization={organization}
+          orgId="123"
+          projectId="456"
+          query="is:unresolved"
+          supportedTags={supportedTags}
+          hasPinnedSearch
+        />,
+        options
+      );
+
+      wrapper.find('form').simulate('submit');
+
+      expect(stubbedOnSearch).toHaveBeenCalledWith('is:unresolved');
     });
   });
 
   it('handles an empty query', function() {
-    let props = {
+    const props = {
       orgId: '123',
       projectId: '456',
       query: '',
       defaultQuery: 'is:unresolved',
+      organization,
       supportedTags,
     };
-    let wrapper = mount(<SmartSearchBar {...props} />, options);
+    const wrapper = mount(<SmartSearchBar {...props} />, options);
     expect(wrapper.state('query')).toEqual('');
   });
 
   describe('updateAutoCompleteItems()', function() {
-    let clock;
-
     beforeEach(function() {
-      clock = sandbox.useFakeTimers();
-    });
-    afterEach(function() {
-      clock.restore();
+      jest.useFakeTimers();
     });
     it('sets state when empty', function() {
-      let props = {
+      const props = {
         orgId: '123',
         projectId: '456',
         query: '',
+        organization,
         supportedTags,
       };
-      let searchBar = mount(<SmartSearchBar {...props} />, options).instance();
+      const searchBar = mount(<SmartSearchBar {...props} />, options).instance();
       searchBar.updateAutoCompleteItems();
       expect(searchBar.state.searchTerm).toEqual('');
-      expect(searchBar.state.searchItems).toEqual(searchBar.props.defaultSearchItems);
-      expect(searchBar.state.activeSearchItem).toEqual(0);
-    });
-
-    it('sets state when incomplete tag', function() {
-      let props = {
-        orgId: '123',
-        projectId: '456',
-        query: 'fu',
-        supportedTags,
-      };
-      let searchBar = mount(<SmartSearchBar {...props} />, options).instance();
-      searchBar.updateAutoCompleteItems();
-      expect(searchBar.state.searchTerm).toEqual('fu');
       expect(searchBar.state.searchItems).toEqual([]);
       expect(searchBar.state.activeSearchItem).toEqual(0);
     });
 
-    it('sets state when incomplete tag as second input', function() {
-      let props = {
+    it('sets state when incomplete tag', async function() {
+      const props = {
+        orgId: '123',
+        projectId: '456',
+        query: 'fu',
+        organization,
+        supportedTags,
+      };
+      jest.useRealTimers();
+      const wrapper = mount(<SmartSearchBar {...props} />, options);
+      const searchBar = wrapper.instance();
+      searchBar.updateAutoCompleteItems();
+      await tick();
+      wrapper.update();
+      expect(searchBar.state.searchTerm).toEqual('fu');
+      expect(searchBar.state.searchItems).toEqual([
+        expect.objectContaining({children: []}),
+      ]);
+      expect(searchBar.state.activeSearchItem).toEqual(0);
+    });
+
+    it('sets state when incomplete tag has negation operator', async function() {
+      const props = {
+        orgId: '123',
+        projectId: '456',
+        query: '!fu',
+        organization,
+        supportedTags,
+      };
+      jest.useRealTimers();
+      const wrapper = mount(<SmartSearchBar {...props} />, options);
+      const searchBar = wrapper.instance();
+      searchBar.updateAutoCompleteItems();
+      await tick();
+      wrapper.update();
+      expect(searchBar.state.searchTerm).toEqual('fu');
+      expect(searchBar.state.searchItems).toEqual([
+        expect.objectContaining({children: []}),
+      ]);
+      expect(searchBar.state.activeSearchItem).toEqual(0);
+    });
+
+    it('sets state when incomplete tag as second input', async function() {
+      const props = {
         orgId: '123',
         projectId: '456',
         query: 'is:unresolved fu',
+        organization,
         supportedTags,
       };
-      let searchBar = mount(<SmartSearchBar {...props} />, options).instance();
+      jest.useRealTimers();
+      const wrapper = mount(<SmartSearchBar {...props} />, options);
+      const searchBar = wrapper.instance();
       searchBar.getCursorPosition = jest.fn();
       searchBar.getCursorPosition.mockReturnValue(15); // end of line
       searchBar.updateAutoCompleteItems();
+      await tick();
+      wrapper.update();
       expect(searchBar.state.searchTerm).toEqual('fu');
-      expect(searchBar.state.searchItems).toHaveLength(0);
+      // 1 items because of headers ("Tags")
+      expect(searchBar.state.searchItems).toHaveLength(1);
       expect(searchBar.state.activeSearchItem).toEqual(0);
     });
 
     it('does not request values when tag is environments', function() {
-      let props = {
+      const props = {
         orgId: '123',
         projectId: '456',
         query: 'environment:production',
         excludeEnvironment: true,
+        organization,
         supportedTags,
       };
-      let searchBar = mount(<SmartSearchBar {...props} />, options).instance();
+      const searchBar = mount(<SmartSearchBar {...props} />, options).instance();
       searchBar.updateAutoCompleteItems();
-      clock.tick(301);
+      jest.advanceTimersByTime(301);
       expect(environmentTagValuesMock).not.toHaveBeenCalled();
     });
 
     it('does not request values when tag is `timesSeen`', function() {
       // This should never get called
-      let mock = MockApiClient.addMockResponse({
+      const mock = MockApiClient.addMockResponse({
         url: '/projects/123/456/tags/timesSeen/values/',
         body: [],
       });
-      let props = {
+      const props = {
         orgId: '123',
         projectId: '456',
         query: 'timesSeen:',
+        organization,
         supportedTags,
       };
-      let searchBar = mount(<SmartSearchBar {...props} />, options).instance();
+      const searchBar = mount(<SmartSearchBar {...props} />, options).instance();
       searchBar.updateAutoCompleteItems();
-      clock.tick(301);
+      jest.advanceTimersByTime(301);
       expect(mock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('onTogglePinnedSearch', function() {
+    let pinRequest, unpinRequest;
+    beforeEach(function() {
+      pinRequest = MockApiClient.addMockResponse({
+        url: '/organizations/org-slug/pinned-searches/',
+        method: 'PUT',
+        body: [],
+      });
+      unpinRequest = MockApiClient.addMockResponse({
+        url: '/organizations/org-slug/pinned-searches/',
+        method: 'DELETE',
+        body: [],
+      });
+      MockApiClient.addMockResponse({
+        url: '/organizations/org-slug/recent-searches/',
+        method: 'POST',
+        body: {},
+      });
+    });
+
+    it('does not pin when query is empty', async function() {
+      const wrapper = mount(
+        <SmartSearchBar
+          api={new Client()}
+          organization={organization}
+          orgId={organization.slug}
+          projectId="456"
+          query=""
+          supportedTags={supportedTags}
+          savedSearchType={0}
+          hasPinnedSearch
+        />,
+        options
+      );
+      wrapper.find('button[aria-label="Pin this search"]').simulate('click');
+      await wrapper.update();
+
+      expect(pinRequest).not.toHaveBeenCalled();
+    });
+
+    it('adds pins', async function() {
+      const wrapper = mount(
+        <SmartSearchBar
+          api={new Client()}
+          organization={organization}
+          orgId={organization.slug}
+          projectId="456"
+          query="is:unresolved"
+          supportedTags={supportedTags}
+          savedSearchType={0}
+          hasPinnedSearch
+        />,
+        options
+      );
+      wrapper.find('button[aria-label="Pin this search"]').simulate('click');
+      await wrapper.update();
+
+      expect(pinRequest).toHaveBeenCalled();
+      expect(unpinRequest).not.toHaveBeenCalled();
+    });
+
+    it('removes pins', async function() {
+      const pinnedSearch = TestStubs.Search({isPinned: true});
+      const wrapper = mount(
+        <SmartSearchBar
+          api={new Client()}
+          organization={organization}
+          orgId={organization.slug}
+          projectId="456"
+          query="is:unresolved"
+          supportedTags={supportedTags}
+          savedSearchType={0}
+          pinnedSearch={pinnedSearch}
+          hasPinnedSearch
+        />,
+        options
+      );
+
+      wrapper.find('button[aria-label="Unpin this search"]').simulate('click');
+      await wrapper.update();
+
+      expect(pinRequest).not.toHaveBeenCalled();
+      expect(unpinRequest).toHaveBeenCalled();
     });
   });
 });

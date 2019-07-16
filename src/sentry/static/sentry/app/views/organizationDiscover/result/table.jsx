@@ -4,10 +4,11 @@ import PropTypes from 'prop-types';
 import styled from 'react-emotion';
 import {t} from 'app/locale';
 import SentryTypes from 'app/sentryTypes';
-import Link from 'app/components/link';
+import Link from 'app/components/links/link';
 import Tooltip from 'app/components/tooltip';
 import Panel from 'app/components/panels/panel';
 import EmptyStateWarning from 'app/components/emptyStateWarning';
+import withOrganization from 'app/utils/withOrganization';
 
 import {getDisplayValue, getDisplayText} from './utils';
 
@@ -16,7 +17,7 @@ const TABLE_ROW_BORDER = 1;
 const TABLE_ROW_HEIGHT_WITH_BORDER = TABLE_ROW_HEIGHT + TABLE_ROW_BORDER;
 const MIN_COL_WIDTH = 100;
 const MAX_COL_WIDTH = 500;
-const CELL_PADDING = 20;
+const CELL_PADDING = 22;
 const MIN_VISIBLE_ROWS = 6;
 const MAX_VISIBLE_ROWS = 30;
 const OTHER_ELEMENTS_HEIGHT = 70; // pagination buttons, query summary
@@ -25,16 +26,13 @@ const OTHER_ELEMENTS_HEIGHT = 70; // pagination buttons, query summary
  * Renders results in a table as well as a query summary (timing, rows returned)
  * from any Snuba result
  */
-export default class ResultTable extends React.Component {
+class ResultTable extends React.Component {
   static propTypes = {
+    organization: SentryTypes.Organization.isRequired,
     data: PropTypes.object.isRequired,
     query: PropTypes.object.isRequired,
     height: PropTypes.number,
     width: PropTypes.number,
-  };
-
-  static contextTypes = {
-    organization: SentryTypes.Organization,
   };
 
   componentDidUpdate(prevProps) {
@@ -48,7 +46,9 @@ export default class ResultTable extends React.Component {
   }
 
   getCellRenderer = cols => ({key, rowIndex, columnIndex, style}) => {
-    const {data: {data, meta}} = this.props;
+    const {
+      data: {data, meta},
+    } = this.props;
 
     const isSpacingCol = columnIndex === cols.length;
 
@@ -57,7 +57,7 @@ export default class ResultTable extends React.Component {
     const isNumberCol =
       !isSpacingCol && ['number', 'integer'].includes(meta[columnIndex].type);
 
-    const align = isNumberCol && colName != 'issue.id' ? 'right' : 'left';
+    const align = isNumberCol && colName !== 'issue.id' ? 'right' : 'left';
 
     if (rowIndex === 0) {
       return (
@@ -87,13 +87,15 @@ export default class ResultTable extends React.Component {
   };
 
   getEventLink = event => {
-    const {slug, projects} = this.context.organization;
+    const {slug, projects} = this.props.organization;
     const projectSlug = projects.find(project => project.id === `${event['project.id']}`)
       .slug;
 
+    const basePath = `/organizations/${slug}/projects/${projectSlug}/`;
+
     return (
       <Tooltip title={t('Open event')}>
-        <Link href={`/${slug}/${projectSlug}/events/${event.id}/`} target="_blank">
+        <Link href={`${basePath}events/${event.id}/`} target="_blank">
           {event.id}
         </Link>
       </Tooltip>
@@ -101,13 +103,12 @@ export default class ResultTable extends React.Component {
   };
 
   getIssueLink = event => {
-    const {slug, projects} = this.context.organization;
-    const projectSlug = projects.find(project => project.id === `${event['project.id']}`)
-      .slug;
+    const {slug} = this.props.organization;
+    const basePath = `/organizations/${slug}/`;
 
     return (
       <Tooltip title={t('Open issue')}>
-        <Link to={`/${slug}/${projectSlug}/issues/${event['issue.id']}`} target="_blank">
+        <Link to={`${basePath}issues/${event['issue.id']}`} target="_blank">
           {event['issue.id']}
         </Link>
       </Tooltip>
@@ -120,7 +121,9 @@ export default class ResultTable extends React.Component {
   // are less than 20 columns of data to check in total.
   // Adds an empty column at the end with the remaining table width if any.
   getColumnWidths = tableWidth => {
-    const {data: {data}} = this.props;
+    const {
+      data: {data},
+    } = this.props;
     const cols = this.getColumnList();
 
     const widths = [];
@@ -134,7 +137,7 @@ export default class ResultTable extends React.Component {
         // We want to avoid calling measureText() too much so only do this
         // for the top 3 longest strings
         const uniqs = [...new Set(data.map(row => row[colName]))]
-          .map(colData => getDisplayText(colData, false))
+          .map(colData => getDisplayText(colData))
           .sort((a, b) => b.length - a.length)
           .slice(0, 3);
 
@@ -165,7 +168,9 @@ export default class ResultTable extends React.Component {
   };
 
   getRowHeight = (rowIndex, columnsToCheck) => {
-    const {data: {data}} = this.props;
+    const {
+      data: {data},
+    } = this.props;
 
     if (rowIndex === 0) {
       return TABLE_ROW_HEIGHT_WITH_BORDER;
@@ -188,7 +193,10 @@ export default class ResultTable extends React.Component {
   };
 
   getColumnList = () => {
-    const {query, data: {meta}} = this.props;
+    const {
+      query,
+      data: {meta},
+    } = this.props;
 
     const fields = new Set([
       ...(query.fields || []),
@@ -227,7 +235,10 @@ export default class ResultTable extends React.Component {
   };
 
   renderTable() {
-    const {data: {data}, height} = this.props;
+    const {
+      data: {data},
+      height,
+    } = this.props;
 
     const cols = this.getColumnList();
 
@@ -290,6 +301,9 @@ export default class ResultTable extends React.Component {
   }
 }
 
+export {ResultTable};
+export default withOrganization(ResultTable);
+
 const Grid = styled(({visibleRows, ...props}) => <div {...props} />)`
   height: ${p =>
     p.visibleRows * TABLE_ROW_HEIGHT_WITH_BORDER +
@@ -303,7 +317,7 @@ const Grid = styled(({visibleRows, ...props}) => <div {...props} />)`
 
 const Cell = styled('div')`
   ${p => !p.isOddRow && `background-color: ${p.theme.whiteDark};`} ${p =>
-      `text-align: ${p.align};`} overflow: scroll;
+    `text-align: ${p.align};`} overflow: scroll;
   font-size: 14px;
   line-height: ${TABLE_ROW_HEIGHT}px;
   padding: 0 10px;

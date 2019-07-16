@@ -1,33 +1,31 @@
+import {Box} from 'grid-emotion';
 import PropTypes from 'prop-types';
 import React from 'react';
-import createReactClass from 'create-react-class';
 import _ from 'lodash';
-
-import AvatarList from 'app/components/avatar/avatarList';
-
-import {Box} from 'grid-emotion';
-import Button from 'app/components/button';
-import LastCommit from 'app/components/lastCommit';
-import LoadingIndicator from 'app/components/loadingIndicator';
-import LoadingError from 'app/components/loadingError';
-import TimeSince from 'app/components/timeSince';
-import Hovercard from 'app/components/hovercard';
+import createReactClass from 'create-react-class';
+import styled from 'react-emotion';
 
 import {getShortVersion} from 'app/utils';
 import {t, tct} from 'app/locale';
-
-import ApiMixin from 'app/mixins/apiMixin';
+import AvatarList from 'app/components/avatar/avatarList';
+import Button from 'app/components/button';
+import Hovercard from 'app/components/hovercard';
+import LastCommit from 'app/components/lastCommit';
+import LoadingError from 'app/components/loadingError';
+import LoadingIndicator from 'app/components/loadingIndicator';
+import RepoLabel from 'app/components/repoLabel';
+import TimeSince from 'app/components/timeSince';
+import withApi from 'app/utils/withApi';
 
 const VersionHoverCard = createReactClass({
   displayName: 'VersionHoverCard',
 
   propTypes: {
+    api: PropTypes.object,
     version: PropTypes.string.isRequired,
     orgId: PropTypes.string.isRequired,
     projectId: PropTypes.string.isRequired,
   },
-
-  mixins: [ApiMixin],
 
   getInitialState() {
     return {
@@ -45,16 +43,16 @@ const VersionHoverCard = createReactClass({
   },
 
   fetchData() {
-    let {orgId, projectId, version} = this.props;
-    let done = _.after(3, () => {
+    const {orgId, projectId, version} = this.props;
+    const done = _.after(3, () => {
       this.setState({loading: false});
     });
 
     // releases
-    let releasePath = `/projects/${orgId}/${projectId}/releases/${encodeURIComponent(
+    const releasePath = `/projects/${orgId}/${projectId}/releases/${encodeURIComponent(
       version
     )}/`;
-    this.api.request(releasePath, {
+    this.props.api.request(releasePath, {
       method: 'GET',
       success: data => {
         this.setState({
@@ -70,8 +68,8 @@ const VersionHoverCard = createReactClass({
     });
 
     // repos
-    let repoPath = `/organizations/${orgId}/repos/`;
-    this.api.request(repoPath, {
+    const repoPath = `/organizations/${orgId}/repos/`;
+    this.props.api.request(repoPath, {
       method: 'GET',
       success: data => {
         this.setState({
@@ -87,10 +85,10 @@ const VersionHoverCard = createReactClass({
     });
 
     //deploys
-    let deployPath = `/organizations/${orgId}/releases/${encodeURIComponent(
+    const deployPath = `/organizations/${orgId}/releases/${encodeURIComponent(
       version
     )}/deploys/`;
-    this.api.request(deployPath, {
+    this.props.api.request(deployPath, {
       method: 'GET',
       success: data => {
         this.setState({
@@ -114,7 +112,7 @@ const VersionHoverCard = createReactClass({
   },
 
   getRepoLink() {
-    let {orgId} = this.props;
+    const {orgId} = this.props;
     return {
       body: (
         <Box p={2} className="align-center">
@@ -132,13 +130,13 @@ const VersionHoverCard = createReactClass({
   },
 
   getBody() {
-    let {release, deploys} = this.state;
-    let {version} = this.props;
-    let lastCommit = release.lastCommit;
-    let shortVersion = getShortVersion(version);
+    const {release, deploys} = this.state;
+    const {version} = this.props;
+    const lastCommit = release.lastCommit;
+    const shortVersion = getShortVersion(version);
 
-    let recentDeploysByEnviroment = deploys.reduce(function(dbe, deploy) {
-      let {dateFinished, environment} = deploy;
+    const recentDeploysByEnviroment = deploys.reduce(function(dbe, deploy) {
+      const {dateFinished, environment} = deploy;
       if (!dbe.hasOwnProperty(environment)) {
         dbe[environment] = dateFinished;
       }
@@ -173,7 +171,7 @@ const VersionHoverCard = createReactClass({
                 users={release.authors}
                 avatarSize={25}
                 tooltipOptions={{container: 'body'}}
-                typeMembers={'authors'}
+                typeMembers="authors"
               />
             </div>
           </div>
@@ -184,23 +182,11 @@ const VersionHoverCard = createReactClass({
                 <h6 className="deploy-heading">{t('Deploys')}</h6>
               </div>
               {mostRecentDeploySlice.map((env, idx) => {
-                let dateFinished = recentDeploysByEnviroment[env];
+                const dateFinished = recentDeploysByEnviroment[env];
                 return (
                   <div className="deploy" key={idx}>
                     <div className="deploy-meta" style={{position: 'relative'}}>
-                      <strong
-                        className="repo-label truncate"
-                        style={{
-                          padding: 3,
-                          display: 'inline-block',
-                          width: 86,
-                          maxWidth: 86,
-                          textAlign: 'center',
-                          fontSize: 12,
-                        }}
-                      >
-                        {env}
-                      </strong>
+                      <VersionRepoLabel>{env}</VersionRepoLabel>
                       {dateFinished && (
                         <span
                           className="text-light"
@@ -226,7 +212,7 @@ const VersionHoverCard = createReactClass({
   },
 
   render() {
-    let {loading, error, hasRepos} = this.state;
+    const {loading, error, hasRepos} = this.state;
     let header = null;
     let body = loading ? (
       <LoadingIndicator mini={true} />
@@ -235,7 +221,7 @@ const VersionHoverCard = createReactClass({
     ) : null;
 
     if (!loading && !error) {
-      let renderObj = hasRepos ? this.getBody() : this.getRepoLink();
+      const renderObj = hasRepos ? this.getBody() : this.getRepoLink();
       header = renderObj.header;
       body = renderObj.body;
     }
@@ -248,4 +234,10 @@ const VersionHoverCard = createReactClass({
   },
 });
 
-export default VersionHoverCard;
+export {VersionHoverCard};
+
+export default withApi(VersionHoverCard);
+
+const VersionRepoLabel = styled(RepoLabel)`
+  width: 86px;
+`;

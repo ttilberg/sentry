@@ -41,17 +41,26 @@ def list_organization_teams_scenario(runner):
 
 # OrganizationPermission + team:write
 class OrganizationTeamsPermission(OrganizationPermission):
-    def __init__(self):
-        for m in 'POST', 'PUT', 'DELETE':
-            self.scope_map[m].append('team:write')
+    scope_map = {
+        'GET': ['org:read', 'org:write', 'org:admin'],
+        'POST': ['org:write', 'org:admin', 'team:write'],
+        'PUT': ['org:write', 'org:admin', 'team:write'],
+        'DELETE': ['org:admin', 'team:write'],
+    }
 
 
 class TeamSerializer(serializers.Serializer):
-    name = serializers.CharField(max_length=64, required=False)
+    name = serializers.CharField(
+        max_length=64,
+        required=False,
+        allow_null=True,
+        allow_blank=True,
+    )
     slug = serializers.RegexField(
         r'^[a-z0-9_\-]+$',
         max_length=50,
         required=False,
+        allow_null=True,
         error_messages={
             'invalid': _('Enter a valid slug consisting of lowercase letters, '
                          'numbers, underscores or hyphens.'),
@@ -125,10 +134,10 @@ class OrganizationTeamsEndpoint(OrganizationEndpoint):
                             name.
         :auth: required
         """
-        serializer = TeamSerializer(data=request.DATA)
+        serializer = TeamSerializer(data=request.data)
 
         if serializer.is_valid():
-            result = serializer.object
+            result = serializer.validated_data
 
             try:
                 with transaction.atomic():

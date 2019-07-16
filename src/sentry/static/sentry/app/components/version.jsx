@@ -1,17 +1,22 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 
-import ProjectLink from 'app/components/projectLink';
-import Link from 'app/components/link';
 import {getShortVersion} from 'app/utils';
+import GlobalSelectionLink from 'app/components/globalSelectionLink';
+import Link from 'app/components/links/link';
+import withOrganization from 'app/utils/withOrganization';
 
 class Version extends React.Component {
   static propTypes = {
     anchor: PropTypes.bool,
     version: PropTypes.string.isRequired,
     orgId: PropTypes.string,
-    projectId: PropTypes.string,
     showShortVersion: PropTypes.bool,
+
+    /**
+     * Should link to Release preserve user's global selection values
+     */
+    preserveGlobalSelection: PropTypes.bool,
   };
 
   static defaultProps = {
@@ -20,29 +25,31 @@ class Version extends React.Component {
   };
 
   render() {
-    const {orgId, projectId, showShortVersion, version, anchor} = this.props;
-    const versionTitle = showShortVersion ? getShortVersion(version) : version;
+    const {
+      orgId,
+      showShortVersion,
+      version,
+      anchor,
+      className,
+      preserveGlobalSelection,
+    } = this.props;
 
-    if (anchor) {
-      if (projectId) {
-        return (
-          // NOTE: version is encoded because it can contain slashes "/",
-          //       which can interfere with URL construction
-          <ProjectLink
-            to={`/${orgId}/${projectId}/releases/${encodeURIComponent(version)}/`}
-          >
-            <span title={version}>{versionTitle}</span>
-          </ProjectLink>
-        );
-      }
+    const versionTitle = showShortVersion ? getShortVersion(version) : version;
+    const LinkComponent = preserveGlobalSelection ? GlobalSelectionLink : Link;
+
+    if (anchor && orgId) {
       return (
-        <Link to={`/organizations/${orgId}/releases/${encodeURIComponent(version)}`}>
+        <LinkComponent
+          to={`/organizations/${orgId}/releases/${encodeURIComponent(version)}/`}
+          className={className}
+        >
           <span title={version}>{versionTitle}</span>
-        </Link>
+        </LinkComponent>
       );
     }
+
     return <span title={version}>{versionTitle}</span>;
   }
 }
 
-export default Version;
+export default withOrganization(Version);

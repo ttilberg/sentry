@@ -63,7 +63,16 @@ HTTP_INTERFACE_SCHEMA = {
             'minLength': 1,
         },
         'method': {'type': 'string'},
-        'query_string': {'type': ['string', 'object']},
+        'query_string': {
+            'anyOf': [
+                {'type': ['string', 'object']},
+                {'type': 'array', 'items': {
+                    'type': 'array',
+                    'maxItems': 2,
+                    'minItems': 2,
+                }},
+            ],
+        },
         'inferred_content_type': {'type': 'string'},
         'cookies': {
             'anyOf': [
@@ -81,7 +90,7 @@ HTTP_INTERFACE_SCHEMA = {
         'data': {'type': ['string', 'object', 'array']},
         'fragment': {'type': 'string'},
     },
-    'required': ['url'],
+    'required': [],
     'additionalProperties': True,
 }
 
@@ -100,6 +109,7 @@ FRAME_INTERFACE_SCHEMA = {
         'errors': {},
         'filename': {'type': 'string'},
         'function': {'type': 'string'},
+        'raw_function': {'type': 'string'},
         'image_addr': {},
         'in_app': {'type': 'boolean', 'default': False},
         'instruction_addr': {},

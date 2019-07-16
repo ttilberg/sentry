@@ -13,7 +13,7 @@ from mock import patch
 from sentry.api.serializers import serialize
 from sentry.api.serializers.models.group import GroupSerializerSnuba, StreamGroupSerializerSnuba, snuba_tsdb
 from sentry.models import (
-    Environment, GroupLink, GroupResolution, GroupSnooze, GroupStatus,
+    Group, Environment, GroupEnvironment, GroupLink, GroupResolution, GroupSnooze, GroupStatus,
     GroupSubscription, UserOption, UserOptionValue
 )
 from sentry.testutils import APITestCase, SnubaTestCase
@@ -27,7 +27,7 @@ class GroupSerializerSnubaTest(APITestCase, SnubaTestCase):
         self.week_ago = timezone.now() - timedelta(days=7)
 
     def test_is_ignored_with_expired_snooze(self):
-        now = timezone.now().replace(microsecond=0)
+        now = timezone.now()
 
         user = self.create_user()
         group = self.create_group(
@@ -43,7 +43,7 @@ class GroupSerializerSnubaTest(APITestCase, SnubaTestCase):
         assert result['statusDetails'] == {}
 
     def test_is_ignored_with_valid_snooze(self):
-        now = timezone.now().replace(microsecond=0)
+        now = timezone.now()
 
         user = self.create_user()
         group = self.create_group(
@@ -64,7 +64,7 @@ class GroupSerializerSnubaTest(APITestCase, SnubaTestCase):
         assert result['statusDetails']['actor'] is None
 
     def test_is_ignored_with_valid_snooze_and_actor(self):
-        now = timezone.now().replace(microsecond=0)
+        now = timezone.now()
 
         user = self.create_user()
         group = self.create_group(
@@ -199,12 +199,12 @@ class GroupSerializerSnubaTest(APITestCase, SnubaTestCase):
 
         combinations = (
             # ((default, project), (subscribed, details))
-            ((None, None), (True, None)),
             ((UserOptionValue.all_conversations, None), (True, None)),
             ((UserOptionValue.all_conversations, UserOptionValue.all_conversations), (True, None)),
             ((UserOptionValue.all_conversations, UserOptionValue.participating_only), (False, None)),
             ((UserOptionValue.all_conversations, UserOptionValue.no_conversations),
              (False, {'disabled': True})),
+            ((None, None), (False, None)),
             ((UserOptionValue.participating_only, None), (False, None)),
             ((UserOptionValue.participating_only, UserOptionValue.all_conversations), (True, None)),
             ((UserOptionValue.participating_only, UserOptionValue.participating_only), (False, None)),
@@ -296,26 +296,47 @@ class GroupSerializerSnubaTest(APITestCase, SnubaTestCase):
         assert not result['isSubscribed']
 
     def test_seen_stats(self):
-        group = self.create_group(first_seen=self.week_ago, times_seen=5)
+        environment = self.create_environment(project=self.project)
+        environment2 = self.create_environment(project=self.project)
+
+        events = []
+
+        for event_id, env, user_id, timestamp in [
+            ('a' * 32, environment, 1, self.min_ago.isoformat()[:19]),
+            ('b' * 32, environment, 2, self.min_ago.isoformat()[:19]),
+            ('c' * 32, environment2, 3, self.week_ago.isoformat()[:19]),
+        ]:
+            events.append(self.store_event(
+                data={
+                    'event_id': event_id,
+                    'fingerprint': ['put-me-in-group1'],
+                    'timestamp': timestamp,
+                    'environment': env.name,
+                    'user': {'id': user_id},
+                },
+                project_id=self.project.id
+            ))
+
+        # Assert all events are in the same group
+        group_id, = set(e.group.id for e in events)
+
+        group = Group.objects.get(id=group_id)
+        group.times_seen = 5
+        group.first_seen = self.week_ago
+        group.save()
 
         # should use group columns when no environments arg passed
-        result = serialize(group, serializer=GroupSerializerSnuba())
+        result = serialize(group, serializer=GroupSerializerSnuba(environment_ids=[]))
         assert result['count'] == '5'
         assert result['lastSeen'] == group.last_seen
         assert result['firstSeen'] == group.first_seen
 
-        environment = self.create_environment(project=group.project)
-        environment2 = self.create_environment(project=group.project)
+        # update this to something different to make sure it's being used
+        group_env = GroupEnvironment.objects.get(group_id=group_id, environment_id=environment.id)
+        group_env.first_seen = self.day_ago - timedelta(days=3)
+        group_env.save()
 
-        self.create_event(
-            'a' * 32, group=group, datetime=self.day_ago, tags={'environment': environment.name}
-        )
-        self.create_event(
-            'b' * 32, group=group, datetime=self.min_ago, tags={'environment': environment.name}
-        )
-        self.create_event(
-            'c' * 32, group=group, datetime=self.min_ago, tags={'environment': environment2.name}
-        )
+        group_env2 = GroupEnvironment.objects.get(group_id=group_id, environment_id=environment2.id)
 
         result = serialize(
             group, serializer=GroupSerializerSnuba(
@@ -324,8 +345,22 @@ class GroupSerializerSnubaTest(APITestCase, SnubaTestCase):
         assert result['count'] == '3'
         # result is rounded down to nearest second
         assert result['lastSeen'] == self.min_ago - timedelta(microseconds=self.min_ago.microsecond)
-        assert result['firstSeen'] == self.day_ago - \
-            timedelta(microseconds=self.day_ago.microsecond)
+        assert result['firstSeen'] == group_env.first_seen
+        assert group_env2.first_seen > group_env.first_seen
+        assert result['userCount'] == 3
+
+        # test userCount, count, lastSeen filtering correctly by time
+        # firstSeen should still be from GroupEnvironment
+        result = serialize(group, serializer=GroupSerializerSnuba(
+            environment_ids=[environment.id, environment2.id],
+            start=self.week_ago - timedelta(hours=1),
+            end=self.week_ago + timedelta(hours=1),
+        ))
+        assert result['userCount'] == 1
+        assert result['lastSeen'] == self.week_ago - \
+            timedelta(microseconds=self.week_ago.microsecond)
+        assert result['firstSeen'] == group_env.first_seen
+        assert result['count'] == '1'
 
 
 class StreamGroupSerializerTestCase(APITestCase, SnubaTestCase):

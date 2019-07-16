@@ -11,12 +11,14 @@ from __future__ import absolute_import
 __all__ = (
     'TestCase', 'TransactionTestCase', 'APITestCase', 'TwoFactorAPITestCase', 'AuthProviderTestCase', 'RuleTestCase',
     'PermissionTestCase', 'PluginTestCase', 'CliTestCase', 'AcceptanceTestCase',
-    'IntegrationTestCase', 'UserReportEnvironmentTestCase', 'SnubaTestCase', 'IntegrationRepositoryTestCase',
-    'ReleaseCommitPatchTest', 'SetRefsTestCase'
+    'IntegrationTestCase', 'UserReportEnvironmentTestCase', 'SnubaTestCase',
+    'IntegrationRepositoryTestCase',
+    'ReleaseCommitPatchTest', 'SetRefsTestCase', 'OrganizationDashboardWidgetTestCase'
 )
 
 import base64
 import calendar
+import contextlib
 import os
 import os.path
 import pytest
@@ -24,8 +26,7 @@ import requests
 import six
 import types
 import logging
-
-from sentry_sdk import Hub
+import mock
 
 from click.testing import CliRunner
 from datetime import datetime
@@ -40,8 +41,7 @@ from django.http import HttpRequest
 from django.test import TestCase, TransactionTestCase
 from django.test.utils import CaptureQueriesContext
 from django.utils import timezone
-from django.utils.importlib import import_module
-from exam import before, after, fixture, Exam
+from exam import before, fixture, Exam
 from mock import patch
 from pkg_resources import iter_entry_points
 from rest_framework.test import APITestCase as BaseAPITestCase
@@ -54,16 +54,21 @@ from sentry.auth.superuser import (
     COOKIE_SECURE as SU_COOKIE_SECURE, COOKIE_DOMAIN as SU_COOKIE_DOMAIN, COOKIE_PATH as SU_COOKIE_PATH
 )
 from sentry.constants import MODULE_ROOT
+from sentry.eventstream.snuba import SnubaEventStream
 from sentry.models import (
     GroupEnvironment, GroupHash, GroupMeta, ProjectOption, Repository, DeletedOrganization,
     Environment, GroupStatus, Organization, TotpInterface, UserReport,
+    Dashboard, ObjectStatus, WidgetDataSource, WidgetDataSourceTypes
 )
 from sentry.plugins import plugins
 from sentry.rules import EventState
+from sentry.tagstore.snuba import SnubaCompatibilityTagStorage
 from sentry.utils import json
 from sentry.utils.auth import SSO_SESSION_KEY
 
 from .fixtures import Fixtures
+from .factories import Factories
+from .skips import requires_snuba
 from .helpers import (
     AuthProvider, Feature, get_auth_header, TaskRunner, override_options, parse_queries
 )
@@ -79,23 +84,10 @@ class BaseTestCase(Fixtures, Exam):
         assert resp.status_code == 302
         assert resp['Location'].startswith('http://testserver' + reverse('sentry-login'))
 
-    @after
-    def teardown_internal_sdk(self):
-        Hub.main.bind_client(None)
-
     @before
     def setup_dummy_auth_provider(self):
         auth.register('dummy', DummyProvider)
         self.addCleanup(auth.unregister, 'dummy', DummyProvider)
-
-    @before
-    def setup_session(self):
-        engine = import_module(settings.SESSION_ENGINE)
-
-        session = engine.SessionStore()
-        session.save()
-
-        self.session = session
 
     def tasks(self):
         return TaskRunner()
@@ -264,9 +256,15 @@ class BaseTestCase(Fixtures, Exam):
                 **extra
             )
 
-    def _postMinidumpWithHeader(self, upload_file_minidump, data=None, key=None, **extra):
-        data = dict(data or {})
-        data['upload_file_minidump'] = upload_file_minidump
+    def _postMinidumpWithHeader(self, upload_file_minidump, data=None,
+                                key=None, raw=False, **extra):
+        if raw:
+            data = upload_file_minidump.read()
+            extra.setdefault('content_type', 'application/octet-stream')
+        else:
+            data = dict(data or {})
+            data['upload_file_minidump'] = upload_file_minidump
+
         path = reverse('sentry-api-minidump', kwargs={'project_id': self.project.id})
         path += '?sentry_key=%s' % self.projectkey.public_key
         with self.tasks():
@@ -289,6 +287,30 @@ class BaseTestCase(Fixtures, Exam):
                 data=upload_unreal_crash,
                 content_type='application/octet-stream',
                 HTTP_USER_AGENT=DEFAULT_USER_AGENT,
+                **extra
+            )
+
+    def _postEventAttachmentWithHeader(self, attachment, **extra):
+        path = reverse(
+            'sentry-api-event-attachment',
+            kwargs={
+                'project_id': self.project.id,
+                'event_id': self.event.id})
+
+        key = self.projectkey.public_key
+        secret = self.projectkey.secret_key
+
+        with self.tasks():
+            return self.client.post(
+                path,
+                attachment,
+                # HTTP_USER_AGENT=DEFAULT_USER_AGENT,
+                HTTP_X_SENTRY_AUTH=get_auth_header(
+                    '_postWithHeader/0.0.0',
+                    key,
+                    secret,
+                    7,
+                ),
                 **extra
             )
 
@@ -359,9 +381,7 @@ class BaseTestCase(Fixtures, Exam):
             assert deleted_log.organization_name == original_object.organization.name
             assert deleted_log.organization_slug == original_object.organization.slug
 
-        # Truncating datetime for mysql compatibility
-        assert deleted_log.date_created.replace(
-            microsecond=0) == original_object.date_added.replace(microsecond=0)
+        assert deleted_log.date_created == original_object.date_added
         assert deleted_log.date_deleted >= deleted_log.date_created
 
     def assertWriteQueries(self, queries, debug=False, *args, **kwargs):
@@ -436,16 +456,26 @@ class APITestCase(BaseTestCase, BaseAPITestCase):
     def get_response(self, *args, **params):
         if self.endpoint is None:
             raise Exception('Implement self.endpoint to use this method.')
+
         url = reverse(self.endpoint, args=args)
-        return getattr(self.client, self.method)(
+        # In some cases we want to pass querystring params to put/post, handle
+        # this here.
+        if 'qs_params' in params:
+            query_string = urlencode(params.pop('qs_params'), doseq=True)
+            url = u'{}?{}'.format(url, query_string)
+
+        method = params.pop('method', self.method)
+
+        return getattr(self.client, method)(
             url,
             format='json',
             data=params,
         )
 
     def get_valid_response(self, *args, **params):
+        status_code = params.pop('status_code', 200)
         resp = self.get_response(*args, **params)
-        assert resp.status_code == 200, resp.content
+        assert resp.status_code == status_code, (resp.status_code, resp.content)
         return resp
 
 
@@ -474,12 +504,14 @@ class TwoFactorAPITestCase(APITestCase):
     def assert_can_enable_org_2fa(self, organization, user, status_code=200):
         self.__helper_enable_organization_2fa(organization, user, status_code)
 
-    def assert_cannot_enable_org_2fa(self, organization, user, status_code):
-        self.__helper_enable_organization_2fa(organization, user, status_code)
+    def assert_cannot_enable_org_2fa(self, organization, user, status_code, err_msg=None):
+        self.__helper_enable_organization_2fa(organization, user, status_code, err_msg)
 
-    def __helper_enable_organization_2fa(self, organization, user, status_code):
+    def __helper_enable_organization_2fa(self, organization, user, status_code, err_msg=None):
         response = self.api_enable_org_2fa(organization, user)
-        assert response.status_code == status_code, response.content
+        assert response.status_code == status_code
+        if err_msg:
+            assert err_msg in response.content
         organization = Organization.objects.get(id=organization.id)
 
         if status_code >= 200 and status_code < 300:
@@ -617,12 +649,12 @@ class PermissionTestCase(TestCase):
         self.team = self.create_team(organization=self.organization)
 
     def assert_can_access(self, user, path, method='GET', **kwargs):
-        self.login_as(user)
+        self.login_as(user, superuser=user.is_superuser)
         resp = getattr(self.client, method.lower())(path, **kwargs)
         assert resp.status_code >= 200 and resp.status_code < 300
 
     def assert_cannot_access(self, user, path, method='GET', **kwargs):
-        self.login_as(user)
+        self.login_as(user, superuser=user.is_superuser)
         resp = getattr(self.client, method.lower())(path, **kwargs)
         assert resp.status_code >= 300
 
@@ -658,7 +690,7 @@ class PermissionTestCase(TestCase):
         self.assert_cannot_access(user, path, **kwargs)
 
     def assert_team_admin_can_access(self, path, **kwargs):
-        return self.assert_role_can_access(path, 'owner', **kwargs)
+        return self.assert_role_can_access(path, 'admin', **kwargs)
 
     def assert_teamless_admin_can_access(self, path, **kwargs):
         user = self.create_user(is_superuser=False)
@@ -762,6 +794,7 @@ class PluginTestCase(TestCase):
 class CliTestCase(TestCase):
     runner = fixture(CliRunner)
     command = None
+
     default_args = []
 
     def invoke(self, *args):
@@ -793,6 +826,8 @@ class AcceptanceTestCase(TransactionTestCase):
             name=settings.SESSION_COOKIE_NAME,
             value=self.session.session_key,
         )
+        # Forward session cookie to django client.
+        self.client.cookies[settings.SESSION_COOKIE_NAME] = self.session.session_key
 
 
 class IntegrationTestCase(TestCase):
@@ -829,11 +864,36 @@ class IntegrationTestCase(TestCase):
         assert 'window.opener.postMessage(' in resp.content
 
 
-class SnubaTestCase(TestCase):
+@pytest.mark.snuba
+@requires_snuba
+class SnubaTestCase(BaseTestCase):
+    """
+    Mixin for enabling test case classes to talk to snuba
+    Useful when you are working on acceptance tests or integration
+    tests that require snuba.
+    """
+
     def setUp(self):
         super(SnubaTestCase, self).setUp()
+        self.init_snuba()
 
+    def init_snuba(self):
+        self.snuba_eventstream = SnubaEventStream()
+        self.snuba_tagstore = SnubaCompatibilityTagStorage()
         assert requests.post(settings.SENTRY_SNUBA + '/tests/drop').status_code == 200
+
+    def store_event(self, *args, **kwargs):
+        with contextlib.nested(
+            mock.patch('sentry.eventstream.insert',
+                       self.snuba_eventstream.insert),
+            mock.patch('sentry.tagstore.delay_index_event_tags',
+                       self.snuba_tagstore.delay_index_event_tags),
+            mock.patch('sentry.tagstore.incr_tag_value_times_seen',
+                       self.snuba_tagstore.incr_tag_value_times_seen),
+            mock.patch('sentry.tagstore.incr_group_tag_value_times_seen',
+                       self.snuba_tagstore.incr_group_tag_value_times_seen),
+        ):
+            return Factories.store_event(*args, **kwargs)
 
     def __wrap_event(self, event, data, primary_hash):
         # TODO: Abstract and combine this with the stream code in
@@ -860,7 +920,8 @@ class SnubaTestCase(TestCase):
         doesn't run them through the 'real' event pipeline. In a perfect
         world all test events would go through the full regular pipeline.
         """
-        event = super(SnubaTestCase, self).create_event(*args, **kwargs)
+        # XXX: Use `store_event` instead of this!
+        event = Factories.create_event(*args, **kwargs)
 
         data = event.data.data
         tags = dict(data.get('tags', []))
@@ -915,26 +976,25 @@ class IntegrationRepositoryTestCase(APITestCase):
                           organization_slug=None, add_responses=True):
         if add_responses:
             self.add_create_repository_responses(repository_config)
-        with self.feature({'organizations:repos': True}):
-            if not integration_id:
-                data = {
-                    'provider': self.provider_name,
-                    'identifier': repository_config['id'],
-                }
-            else:
-                data = {
-                    'provider': self.provider_name,
-                    'installation': integration_id,
-                    'identifier': repository_config['id'],
-                }
+        if not integration_id:
+            data = {
+                'provider': self.provider_name,
+                'identifier': repository_config['id'],
+            }
+        else:
+            data = {
+                'provider': self.provider_name,
+                'installation': integration_id,
+                'identifier': repository_config['id'],
+            }
 
-            response = self.client.post(
-                path=reverse(
-                    'sentry-api-0-organization-repositories',
-                    args=[organization_slug or self.organization.slug]
-                ),
-                data=data
-            )
+        response = self.client.post(
+            path=reverse(
+                'sentry-api-0-organization-repositories',
+                args=[organization_slug or self.organization.slug]
+            ),
+            data=data
+        )
         return response
 
     def assert_error_message(self, response, error_type, error_message):
@@ -1011,3 +1071,84 @@ class SetRefsTestCase(APITestCase):
         assert self.org.id == commit.organization_id
         assert self.repo.id == commit.repository_id
         assert commit.key == key
+
+
+class OrganizationDashboardWidgetTestCase(APITestCase):
+    def setUp(self):
+        super(OrganizationDashboardWidgetTestCase, self).setUp()
+        self.login_as(self.user)
+        self.dashboard = Dashboard.objects.create(
+            title='Dashboard 1',
+            created_by=self.user,
+            organization=self.organization,
+        )
+        self.anon_users_query = {
+            'name': 'anonymousUsersAffectedQuery',
+            'fields': [],
+            'conditions': [['user.email', 'IS NULL', None]],
+            'aggregations': [['count()', None, 'Anonymous Users']],
+            'limit': 1000,
+            'orderby': '-time',
+            'groupby': ['time'],
+            'rollup': 86400,
+        }
+        self.known_users_query = {
+            'name': 'knownUsersAffectedQuery',
+            'fields': [],
+            'conditions': [['user.email', 'IS NOT NULL', None]],
+            'aggregations': [['uniq', 'user.email', 'Known Users']],
+            'limit': 1000,
+            'orderby': '-time',
+            'groupby': ['time'],
+            'rollup': 86400,
+        }
+        self.geo_erorrs_query = {
+            'name': 'errorsByGeo',
+            'fields': ['geo.country_code'],
+            'conditions': [['geo.country_code', 'IS NOT NULL', None]],
+            'aggregations': [['count()', None, 'count']],
+            'limit': 10,
+            'orderby': '-count',
+            'groupby': ['geo.country_code'],
+        }
+
+    def assert_widget_data_sources(self, widget_id, data):
+        result_data_sources = sorted(
+            WidgetDataSource.objects.filter(
+                widget_id=widget_id,
+                status=ObjectStatus.VISIBLE
+            ),
+            key=lambda x: x.order
+        )
+        data.sort(key=lambda x: x['order'])
+        for ds, expected_ds in zip(result_data_sources, data):
+            assert ds.name == expected_ds['name']
+            assert ds.type == WidgetDataSourceTypes.get_id_for_type_name(expected_ds['type'])
+            assert ds.order == expected_ds['order']
+            assert ds.data == expected_ds['data']
+
+    def assert_widget(self, widget, order, title, display_type,
+                      display_options=None, data_sources=None):
+        assert widget.order == order
+        assert widget.display_type == display_type
+        if display_options:
+            assert widget.display_options == display_options
+        assert widget.title == title
+
+        if not data_sources:
+            return
+
+        self.assert_widget_data_sources(widget.id, data_sources)
+
+    def assert_widget_data(self, data, order, title, display_type,
+                           display_options=None, data_sources=None):
+        assert data['order'] == order
+        assert data['displayType'] == display_type
+        if display_options:
+            assert data['displayOptions'] == display_options
+        assert data['title'] == title
+
+        if not data_sources:
+            return
+
+        self.assert_widget_data_sources(data['id'], data_sources)

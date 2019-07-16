@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import React from 'react';
-import {Flex} from 'grid-emotion';
+import styled from 'react-emotion';
 
 import SentryTypes from 'app/sentryTypes';
 import {t} from 'app/locale';
@@ -8,6 +8,7 @@ import TextField from 'app/components/forms/textField';
 import NumberField from 'app/components/forms/numberField';
 import SelectControl from 'app/components/forms/selectControl';
 import Badge from 'app/components/badge';
+import getDynamicText from 'app/utils/getDynamicText';
 
 import Aggregations from '../aggregations';
 import Conditions from '../conditions';
@@ -15,7 +16,6 @@ import {
   Fieldset,
   PlaceholderText,
   SidebarLabel,
-  QueryFieldsSidebar,
   DocsSeparator,
   StyledInlineSvg,
   DiscoverDocs,
@@ -51,10 +51,10 @@ export default class QueryFields extends React.Component {
 
   optionRenderer = ({label, isTag}) => {
     return (
-      <Flex align="center">
+      <Option>
         {label}
         {isTag && <Badge text="tag" />}
-      </Flex>
+      </Option>
     );
   };
 
@@ -83,7 +83,7 @@ export default class QueryFields extends React.Component {
     }));
 
     return (
-      <QueryFieldsSidebar>
+      <div>
         {savedQuery && (
           <Fieldset>
             <React.Fragment>
@@ -92,7 +92,7 @@ export default class QueryFields extends React.Component {
               </SidebarLabel>
               <TextField
                 name="name"
-                value={savedQueryName}
+                value={getDynamicText({value: savedQueryName, fixed: 'query name'})}
                 placeholder={t('Saved search name')}
                 onChange={val => onUpdateName(val)}
               />
@@ -158,7 +158,12 @@ export default class QueryFields extends React.Component {
             <StyledInlineSvg src="icon-chevron-right" size="1em" />
           </DiscoverDocs>
         </DocsLink>
-      </QueryFieldsSidebar>
+      </div>
     );
   }
 }
+
+const Option = styled('div')`
+  display: flex;
+  align-items: center;
+`;

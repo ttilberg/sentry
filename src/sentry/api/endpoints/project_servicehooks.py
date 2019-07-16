@@ -8,6 +8,7 @@ from sentry.api.base import DocSection
 from sentry.api.bases.project import ProjectEndpoint
 from sentry.api.serializers import serialize
 from sentry.api.validators import ServiceHookValidator
+from sentry.mediators import service_hooks
 from sentry.models import AuditLogEntryEvent, ObjectStatus, ServiceHook
 from sentry.utils.apidocs import scenario, attach_scenarios
 
@@ -116,17 +117,18 @@ class ProjectServiceHooksEndpoint(ProjectEndpoint):
                 'detail': ['You do not have that feature enabled']
             }, status=403)
 
-        validator = ServiceHookValidator(data=request.DATA)
+        validator = ServiceHookValidator(data=request.data)
         if not validator.is_valid():
             return self.respond(validator.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        result = validator.object
+        result = validator.validated_data
 
         with transaction.atomic():
-            hook = ServiceHook.objects.create(
-                project_id=project.id,
+            hook = service_hooks.Creator.run(
+                projects=[project],
+                organization=project.organization,
                 url=result['url'],
-                actor_id=request.user.id,
+                actor=request.user,
                 events=result.get('events'),
                 application=getattr(request.auth, 'application', None) if request.auth else None,
             )

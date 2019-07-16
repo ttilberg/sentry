@@ -1,7 +1,10 @@
+import {Link} from 'react-router';
 import PropTypes from 'prop-types';
 import React from 'react';
+import classNames from 'classnames';
 import styled from 'react-emotion';
 
+import {PanelItem} from 'app/components/panels';
 import {t} from 'app/locale';
 import Count from 'app/components/count';
 import InlineSvg from 'app/components/inlineSvg';
@@ -13,7 +16,7 @@ const Delta = ({current, previous, className}) => {
   if (typeof previous === 'undefined') {
     return null;
   }
-  const changePercent = Math.round(Math.abs(current - previous) / previous * 100);
+  const changePercent = Math.round((Math.abs(current - previous) / previous) * 100);
   const direction = !changePercent ? 0 : current - previous;
   return (
     <StyledDelta direction={direction} className={className}>
@@ -46,9 +49,25 @@ const StyledDelta = styled('div')`
 
 class PercentageTableChart extends React.Component {
   static propTypes = {
+    // Main title (left most column) should
     title: PropTypes.node,
+
+    // Label for the "count" title
     countTitle: PropTypes.node,
+
+    extraTitle: PropTypes.node,
     onRowClick: PropTypes.func,
+
+    // Class name for header
+    headerClassName: PropTypes.string,
+
+    // Class name for rows
+    rowClassName: PropTypes.string,
+
+    // If this is a function and returns a truthy value, then the row will be a link
+    // to the return value of this function
+    getRowLink: PropTypes.func,
+
     data: PropTypes.arrayOf(
       PropTypes.shape({
         name: PropTypes.node,
@@ -62,20 +81,28 @@ class PercentageTableChart extends React.Component {
   static defaultProps = {
     title: '',
     countTitle: t('Count'),
+    extraTitle: null,
     onRowClick: () => {},
   };
 
-  handleRowClick = ({specifier}, e) => {
+  handleRowClick = (obj, e) => {
     const {onRowClick} = this.props;
-    onRowClick(specifier, e);
+    onRowClick(obj, e);
   };
 
   render() {
-    const {title, countTitle, data} = this.props;
+    const {
+      rowClassName,
+      headerClassName,
+      getRowLink,
+      title,
+      countTitle,
+      extraTitle,
+      data,
+    } = this.props;
 
     return (
       <TableChart
-        headers={[title, countTitle, t('Percentage')]}
         data={data.map(({value, lastValue, name, percentage}) => [
           <Name key="name">{name}</Name>,
           <CountColumn key="count">
@@ -90,38 +117,78 @@ class PercentageTableChart extends React.Component {
           </React.Fragment>,
         ])}
         renderRow={({items, rowIndex, ...other}) => (
-          <Row onClick={this.handleRowClick} data={data} rowIndex={rowIndex}>
+          <Row
+            dataRowClassName={rowClassName}
+            headerRowClassName={headerClassName}
+            getRowLink={getRowLink}
+            onClick={this.handleRowClick}
+            data={data}
+            rowIndex={rowIndex}
+          >
             <NameAndCountContainer>
               {items[0]}
               <div>{items[1]}</div>
             </NameAndCountContainer>
             <PercentageContainer>
               <PercentageLabel>{items[2]}</PercentageLabel>
+              {items[3]}
             </PercentageContainer>
           </Row>
         )}
-      />
+      >
+        {({renderRow, renderBody, ...props}) => (
+          <TableChartWrapper>
+            <TableHeader>
+              {renderRow({
+                isTableHeader: true,
+                items: [title, countTitle, t('Percentage'), extraTitle],
+                rowIndex: -1,
+                ...props,
+              })}
+            </TableHeader>
+            {renderBody({renderRow, ...props})}
+          </TableChartWrapper>
+        )}
+      </TableChart>
     );
   }
 }
 
-const Row = styled(function RowComponent({className, data, rowIndex, onClick, children}) {
-  return (
-    <div
-      className={className}
-      onClick={e => typeof onClick === 'function' && onClick(data[rowIndex], e)}
-    >
-      {children}
-    </div>
-  );
+const Row = styled(function RowComponent({
+  headerRowClassName,
+  dataRowClassName,
+  className,
+  data,
+  getRowLink,
+  rowIndex,
+  onClick,
+  children,
+}) {
+  const isLink = typeof getRowLink === 'function' && rowIndex > -1;
+  const linkPath = isLink && getRowLink(data[rowIndex]);
+  const Component = isLink ? Link : 'div';
+  const rowProps = {
+    className: classNames(
+      className,
+      rowIndex > -1 && dataRowClassName,
+      rowIndex === -1 && headerRowClassName
+    ),
+    children,
+    ...(linkPath && {
+      to: linkPath,
+    }),
+    ...(!isLink &&
+      typeof onClick === 'function' && {
+        onClick: e => onClick(data[rowIndex], e),
+      }),
+  };
+
+  return <Component {...rowProps} />;
 })`
   display: flex;
   flex: 1;
-  cursor: pointer;
-`;
-
-const StyledPercentageTableChart = styled(PercentageTableChart)`
-  width: 100%;
+  ${p => p.rowIndex > -1 && 'cursor: pointer'};
+  font-size: 0.9em;
 `;
 
 const FlexContainers = styled('div')`
@@ -176,4 +243,25 @@ const CountColumn = styled(Name)`
   margin-left: ${space(0.5)};
 `;
 
-export default StyledPercentageTableChart;
+const TableHeader = styled(PanelItem)`
+  color: ${p => p.theme.gray2};
+  padding: ${space(1)};
+`;
+
+const TableChartWrapper = styled('div')`
+  margin-bottom: 0;
+  padding: 0 ${space(2)};
+
+  /* Fit to container dimensions */
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  /* stylelint-disable-next-line no-duplicate-selectors */
+  ${PanelItem} {
+    padding: ${space(1)};
+  }
+`;
+
+export default PercentageTableChart;

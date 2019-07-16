@@ -10,11 +10,10 @@ describe('SuggestedOwners', function() {
 
   const organization = TestStubs.Organization();
   const project = TestStubs.Project();
+  const group = TestStubs.Group({firstRelease: {}});
 
   const routerContext = TestStubs.routerContext([
     {
-      group: TestStubs.Group(),
-      project,
       organization,
     },
   ]);
@@ -50,11 +49,14 @@ describe('SuggestedOwners', function() {
       },
     });
 
-    const wrapper = mount(<SuggestedOwners event={event} />, routerContext);
+    const wrapper = mount(
+      <SuggestedOwners project={project} group={group} event={event} />,
+      routerContext
+    );
 
     expect(wrapper.find('ActorAvatar')).toHaveLength(2);
 
-    // One includes committers the other includes ownership rules
+    // One includes committers, the other includes ownership rules
     expect(
       wrapper
         .find('SuggestedOwnerHovercard')
@@ -67,6 +69,36 @@ describe('SuggestedOwners', function() {
         .map(node => node.props())
         .some(p => p.commits !== undefined && p.rules === undefined)
     ).toBe(true);
+  });
+
+  it('does not call committers endpoint if `group.firstRelease` does not exist', function() {
+    const committers = Client.addMockResponse({
+      url: `${endpoint}/committers/`,
+      body: {
+        committers: [
+          {
+            author: TestStubs.CommitAuthor(),
+            commits: [TestStubs.Commit()],
+          },
+        ],
+      },
+    });
+
+    Client.addMockResponse({
+      url: `${endpoint}/owners/`,
+      body: {
+        owners: [{type: 'user', ...user}],
+        rules: [[['path', 'sentry/tagstore/*'], [['user', user.email]]]],
+      },
+    });
+
+    const wrapper = mount(
+      <SuggestedOwners project={project} group={TestStubs.Group()} event={event} />,
+      routerContext
+    );
+
+    expect(committers).not.toHaveBeenCalled();
+    expect(wrapper.find('ActorAvatar')).toHaveLength(1);
   });
 
   it('Merges owner matching rules and having suspect commits', function() {
@@ -87,7 +119,10 @@ describe('SuggestedOwners', function() {
       },
     });
 
-    const wrapper = mount(<SuggestedOwners event={event} />, routerContext);
+    const wrapper = mount(
+      <SuggestedOwners project={project} group={group} event={event} />,
+      routerContext
+    );
 
     expect(wrapper.find('ActorAvatar')).toHaveLength(1);
 

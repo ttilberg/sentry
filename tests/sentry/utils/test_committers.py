@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 
+import unittest
+
 from datetime import timedelta
 from django.utils import timezone
 from mock import Mock
@@ -7,9 +9,17 @@ from uuid import uuid4
 
 from sentry.models import Commit, CommitAuthor, CommitFileChange, Release, Repository
 from sentry.testutils import TestCase
-from sentry.utils.committers import _get_commit_file_changes, _get_frame_paths, get_previous_releases, _match_commits_path, score_path_match_length, tokenize_path
+from sentry.utils.committers import (
+    _get_commit_file_changes,
+    _get_frame_paths,
+    _match_commits_path,
+    get_serialized_event_file_committers,
+    get_previous_releases,
+    score_path_match_length,
+    tokenize_path
+)
 
-# TODO(lb): Tests are still needed for _get_committers and _get_vent_file_commiters
+# TODO(lb): Tests are still needed for _get_committers and _get_event_file_commiters
 
 
 class CommitTestCase(TestCase):
@@ -50,7 +60,7 @@ class CommitTestCase(TestCase):
         )
 
 
-class TokenizePathTestCase(TestCase):
+class TokenizePathTestCase(unittest.TestCase):
     def test_forward_slash(self):
         assert list(tokenize_path('foo/bar')) == ['bar', 'foo']
 
@@ -77,7 +87,7 @@ class TokenizePathTestCase(TestCase):
         assert list(tokenize_path('/')) == []
 
 
-class ScorePathMatchLengthTest(TestCase):
+class ScorePathMatchLengthTest(unittest.TestCase):
     def test_equal_paths(self):
         assert score_path_match_length('foo/bar/baz', 'foo/bar/baz') == 3
 
@@ -92,7 +102,7 @@ class ScorePathMatchLengthTest(TestCase):
         assert score_path_match_length('./foo/bar/baz', 'foo/bar/baz') == 3
 
 
-class GetFramePathsTestCase(TestCase):
+class GetFramePathsTestCase(unittest.TestCase):
     def setUp(self):
         self.event = Mock()
         self.event.data = {}
@@ -207,3 +217,195 @@ class GetPreviousReleasesTestCase(TestCase):
         assert len(releases) == 2
         assert releases[0] == release2
         assert releases[1] == release1
+
+
+class GetEventFileCommitters(CommitTestCase):
+    def setUp(self):
+        super(GetEventFileCommitters, self).setUp()
+        self.release = self.create_release(
+            project=self.project,
+            version='v12'
+        )
+        self.group = self.create_group(
+            project=self.project,
+            message='Kaboom!',
+            first_release=self.release,
+        )
+
+    def test_java_sdk_path_mangling(self):
+        event = self.create_event(
+            group=self.group,
+            message='Kaboom!',
+            platform='java',
+            stacktrace={
+                'frames': [
+                    {
+                        "function": "invoke0",
+                        "abs_path": "NativeMethodAccessorImpl.java",
+                        "in_app": False,
+                        "module": "jdk.internal.reflect.NativeMethodAccessorImpl",
+                        "filename": "NativeMethodAccessorImpl.java",
+                    },
+                    {
+                        "function": "home",
+                        "abs_path": "Application.java",
+                        "module": "io.sentry.example.Application",
+                        "in_app": True,
+                        "lineno": 30,
+                        "filename": "Application.java",
+                    },
+                    {
+                        "function": "handledError",
+                        "abs_path": "Application.java",
+                        "module": "io.sentry.example.Application",
+                        "in_app": True,
+                        "lineno": 39,
+                        "filename": "Application.java",
+                    }
+                ]
+            }
+        )
+        self.release.set_commits([
+            {
+                'id': 'a' * 40,
+                'repository': self.repo.name,
+                'author_email': 'bob@example.com',
+                'author_name': 'Bob',
+                'message': 'i fixed a bug',
+                'patch_set': [
+                    {
+                        'path': 'src/main/java/io/sentry/example/Application.java',
+                        'type': 'M',
+                    },
+                ]
+            }
+        ])
+
+        result = get_serialized_event_file_committers(self.project, event)
+        assert len(result) == 1
+        assert 'commits' in result[0]
+        assert len(result[0]['commits']) == 1
+        assert result[0]['commits'][0]['id'] == 'a' * 40
+
+    def test_matching(self):
+        event = self.create_event(
+            group=self.group,
+            message='Kaboom!',
+            platform='python',
+            stacktrace={
+                'frames': [
+                    {
+                        "function": "handle_set_commits",
+                        "abs_path": "/usr/src/sentry/src/sentry/tasks.py",
+                        "module": "sentry.tasks",
+                        "in_app": True,
+                        "lineno": 30,
+                        "filename": "sentry/tasks.py",
+                    },
+                    {
+                        "function": "set_commits",
+                        "abs_path": "/usr/src/sentry/src/sentry/models/release.py",
+                        "module": "sentry.models.release",
+                        "in_app": True,
+                        "lineno": 39,
+                        "filename": "sentry/models/release.py",
+                    }
+                ]
+            }
+        )
+        self.release.set_commits([
+            {
+                'id': 'a' * 40,
+                'repository': self.repo.name,
+                'author_email': 'bob@example.com',
+                'author_name': 'Bob',
+                'message': 'i fixed a bug',
+                'patch_set': [
+                    {
+                        'path': 'src/sentry/models/release.py',
+                        'type': 'M',
+                    },
+                ]
+            }
+        ])
+
+        result = get_serialized_event_file_committers(self.project, event)
+        assert len(result) == 1
+        assert 'commits' in result[0]
+        assert len(result[0]['commits']) == 1
+        assert result[0]['commits'][0]['id'] == 'a' * 40
+
+    def test_not_matching(self):
+        event = self.create_event(
+            group=self.group,
+            message='Kaboom!',
+            platform='python',
+            stacktrace={
+                'frames': [
+                    {
+                        "function": "handle_set_commits",
+                        "abs_path": "/usr/src/sentry/src/sentry/tasks.py",
+                        "module": "sentry.tasks",
+                        "in_app": True,
+                        "lineno": 30,
+                        "filename": "sentry/tasks.py",
+                    },
+                    {
+                        "function": "set_commits",
+                        "abs_path": "/usr/src/sentry/src/sentry/models/release.py",
+                        "module": "sentry.models.release",
+                        "in_app": True,
+                        "lineno": 39,
+                        "filename": "sentry/models/release.py",
+                    }
+                ]
+            }
+        )
+        self.release.set_commits([
+            {
+                'id': 'a' * 40,
+                'repository': self.repo.name,
+                'author_email': 'bob@example.com',
+                'author_name': 'Bob',
+                'message': 'i fixed a bug',
+                'patch_set': [
+                    {
+                        'path': 'some/other/path.py',
+                        'type': 'M',
+                    },
+                ]
+            }
+        ])
+
+        result = get_serialized_event_file_committers(self.project, event)
+        assert len(result) == 0
+
+    def test_no_commits(self):
+        event = self.create_event(
+            group=self.group,
+            message='Kaboom!',
+            platform='python',
+            stacktrace={
+                'frames': [
+                    {
+                        "function": "handle_set_commits",
+                        "abs_path": "/usr/src/sentry/src/sentry/tasks.py",
+                        "module": "sentry.tasks",
+                        "in_app": True,
+                        "lineno": 30,
+                        "filename": "sentry/tasks.py",
+                    },
+                    {
+                        "function": "set_commits",
+                        "abs_path": "/usr/src/sentry/src/sentry/models/release.py",
+                        "module": "sentry.models.release",
+                        "in_app": True,
+                        "lineno": 39,
+                        "filename": "sentry/models/release.py",
+                    }
+                ]
+            }
+        )
+
+        with self.assertRaises(Commit.DoesNotExist):
+            get_serialized_event_file_committers(self.project, event)

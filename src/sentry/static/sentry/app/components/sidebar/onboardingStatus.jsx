@@ -2,10 +2,11 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 import {analytics} from 'app/utils/analytics';
-import {t} from '../../locale';
-import SidebarPanel from './sidebarPanel';
-import TodoList from '../onboardingWizard/todos';
-import Tooltip from '../tooltip';
+import getOnboardingTasks from 'app/components/onboardingWizard/getOnboardingTasks';
+import SidebarPanel from 'app/components/sidebar/sidebarPanel';
+import {tct} from 'app/locale';
+import TodoList from 'app/components/onboardingWizard/todoList';
+import Tooltip from 'app/components/tooltip';
 
 class OnboardingStatus extends React.Component {
   static propTypes = {
@@ -18,10 +19,10 @@ class OnboardingStatus extends React.Component {
   };
 
   componentDidUpdate(prevProps) {
-    let {currentPanel, org} = this.props;
+    const {currentPanel, org} = this.props;
     if (
       currentPanel !== prevProps.currentPanel &&
-      (currentPanel || prevProps.currentPanel == 'todos')
+      (currentPanel || prevProps.currentPanel === 'todos')
     ) {
       this.recordAnalytics(currentPanel, parseInt(org.id, 10));
     }
@@ -34,19 +35,26 @@ class OnboardingStatus extends React.Component {
   }
 
   render() {
-    let {collapsed, org, currentPanel, hidePanel, showPanel, onShowPanel} = this.props;
-    if (org.features && org.features.indexOf('onboarding') === -1) return null;
+    const {collapsed, org, currentPanel, hidePanel, showPanel, onShowPanel} = this.props;
+    if (
+      typeof org.features === 'undefined' ||
+      org.features.indexOf('onboarding') === -1
+    ) {
+      return null;
+    }
 
-    let doneTasks = (org.onboardingTasks || []).filter(
+    const doneTasks = (org.onboardingTasks || []).filter(
       task => task.status === 'complete' || task.status === 'skipped'
     );
-    let allDisplayedTasks = TodoList.TASKS.filter(task => task.display);
 
-    let percentage = Math.round(
-      doneTasks.length / allDisplayedTasks.length * 100
+    const tasks = getOnboardingTasks(org);
+    const allDisplayedTasks = tasks.filter(task => task.display);
+
+    const percentage = Math.round(
+      (doneTasks.length / allDisplayedTasks.length) * 100
     ).toString();
 
-    let style = {
+    const style = {
       height: collapsed ? percentage + '%' : undefined,
       width: collapsed ? undefined : percentage + '%',
     };
@@ -54,15 +62,18 @@ class OnboardingStatus extends React.Component {
     if (doneTasks.length >= allDisplayedTasks.length) {
       return null;
     }
+    const title = tct(
+      'Getting started with Sentry: [br] [done] / [all] tasks completed',
+      {
+        br: <br />,
+        done: doneTasks.length,
+        all: allDisplayedTasks.length,
+      }
+    );
 
     return (
       <div className={currentPanel === 'todos' ? 'onboarding active' : 'onboarding'}>
-        <Tooltip
-          title={t(
-            `Getting started with Sentry: <br />${doneTasks.length} / ${allDisplayedTasks.length} tasks completed`
-          )}
-          tooltipOptions={{html: true}}
-        >
+        <Tooltip title={title}>
           <div
             data-test-id="onboarding-progress-bar"
             className="onboarding-progress-bar"
@@ -71,16 +82,15 @@ class OnboardingStatus extends React.Component {
             <div className="slider" style={style} />
           </div>
         </Tooltip>
-        {showPanel &&
-          currentPanel === 'todos' && (
-            <SidebarPanel
-              collapsed={collapsed}
-              title="Getting Started with Sentry"
-              hidePanel={hidePanel}
-            >
-              <TodoList />
-            </SidebarPanel>
-          )}
+        {showPanel && currentPanel === 'todos' && (
+          <SidebarPanel
+            collapsed={collapsed}
+            title="Getting Started with Sentry"
+            hidePanel={hidePanel}
+          >
+            <TodoList />
+          </SidebarPanel>
+        )}
       </div>
     );
   }

@@ -34,12 +34,14 @@ class AuthUserPasswordExpired(Exception):
 
 
 def _make_key_value(val):
-    return val.strip().split('=', 1)
+    return val.strip().split(u'=', 1)
 
 
 def parse_auth_header(header):
+    if isinstance(header, bytes):
+        header = header.decode('latin1')
     try:
-        return dict(map(_make_key_value, header.split(' ', 1)[1].split(',')))
+        return dict(map(_make_key_value, header.split(u' ', 1)[1].split(u',')))
     except Exception:
         return {}
 
@@ -99,6 +101,17 @@ def initiate_login(request, next_url=None):
 
     if next_url:
         request.session['_next'] = next_url
+
+
+def get_org_redirect_url(request, active_organization):
+    from sentry import features
+
+    # TODO(dcramer): deal with case when the user cannot create orgs
+    if active_organization:
+        return active_organization.get_url()
+    if not features.has('organizations:create'):
+        return '/auth/login/'
+    return '/organizations/new/'
 
 
 def get_login_redirect(request, default=None):

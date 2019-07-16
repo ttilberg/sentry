@@ -1,17 +1,18 @@
 import {mount} from 'enzyme';
 import React from 'react';
 
-import {ProjectCard} from 'app/views/organizationProjectsDashboard/projectCard';
+import {ProjectCard} from 'app/views/projectsDashboard/projectCard';
 
 // NOTE: Unmocking debounce so that the actionCreator never fires
 jest.unmock('lodash/debounce');
 
 describe('ProjectCard', function() {
-  let wrapper, projectMock;
+  let wrapper;
 
   beforeEach(function() {
     wrapper = mount(
       <ProjectCard
+        organization={TestStubs.Organization()}
         project={TestStubs.Project({
           stats: [[1525042800, 1], [1525046400, 2]],
           platform: 'javascript',
@@ -20,12 +21,6 @@ describe('ProjectCard', function() {
       />,
       TestStubs.routerContext()
     );
-
-    projectMock = MockApiClient.addMockResponse({
-      url: '/projects/org-slug/project-slug/',
-      method: 'PUT',
-      data: TestStubs.Project({isBookmarked: false, platform: 'javascript'}),
-    });
   });
 
   afterEach(function() {
@@ -34,21 +29,6 @@ describe('ProjectCard', function() {
 
   it('renders', function() {
     expect(wrapper).toMatchSnapshot();
-  });
-
-  it('can star', async function() {
-    const star = wrapper.find('Star');
-
-    expect(star.prop('active')).toBe(false);
-    star.simulate('click');
-    expect(projectMock).toHaveBeenCalledWith(
-      '/projects/org-slug/project-slug/',
-      expect.objectContaining({
-        data: {
-          isBookmarked: true,
-        },
-      })
-    );
   });
 
   it('renders latest 2 deploys', function() {
@@ -72,6 +52,7 @@ describe('ProjectCard', function() {
 
     wrapper = mount(
       <ProjectCard
+        organization={TestStubs.Organization()}
         project={TestStubs.Project({
           stats: [[1525042800, 1], [1525046400, 2]],
           platform: 'javascript',
@@ -101,7 +82,11 @@ describe('ProjectCard', function() {
 
   it('renders loading placeholder card if there are no stats', function() {
     wrapper = mount(
-      <ProjectCard project={TestStubs.Project()} params={{orgId: 'org-slug'}} />,
+      <ProjectCard
+        organization={TestStubs.Organization()}
+        project={TestStubs.Project()}
+        params={{orgId: 'org-slug'}}
+      />,
       TestStubs.routerContext()
     );
 

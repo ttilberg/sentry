@@ -4,12 +4,16 @@ __all__ = ['timing', 'incr']
 
 import logging
 
+import functools
 from contextlib import contextmanager
 from django.conf import settings
 from random import random
 from time import time
 from threading import Thread
 from six.moves.queue import Queue
+
+
+metrics_skip_internal_prefixes = tuple(settings.SENTRY_METRICS_SKIP_INTERNAL_PREFIXES)
 
 
 def get_default_backend():
@@ -30,14 +34,11 @@ def _get_key(key):
     return key
 
 
-def _should_sample():
-    sample_rate = settings.SENTRY_METRICS_SAMPLE_RATE
-
+def _should_sample(sample_rate):
     return sample_rate >= 1 or random() >= 1 - sample_rate
 
 
-def _sampled_value(value):
-    sample_rate = settings.SENTRY_METRICS_SAMPLE_RATE
+def _sampled_value(value, sample_rate):
     if sample_rate < 1:
         value = int(value * (1.0 / sample_rate))
     return value
@@ -54,8 +55,8 @@ class InternalMetrics(object):
             from sentry import tsdb
 
             while True:
-                key, instance, tags, amount = q.get()
-                amount = _sampled_value(amount)
+                key, instance, tags, amount, sample_rate = q.get()
+                amount = _sampled_value(amount, sample_rate)
                 if instance:
                     full_key = u'{}.{}'.format(key, instance)
                 else:
@@ -74,30 +75,36 @@ class InternalMetrics(object):
 
         self._started = True
 
-    def incr(self, key, instance=None, tags=None, amount=1):
+    def incr(self, key, instance=None, tags=None, amount=1,
+             sample_rate=settings.SENTRY_METRICS_SAMPLE_RATE):
         if not self._started:
             self._start()
-        self.q.put((key, instance, tags, amount))
+        self.q.put((key, instance, tags, amount, sample_rate))
 
 
 internal = InternalMetrics()
 
 
-def incr(key, amount=1, instance=None, tags=None, skip_internal=True):
-    sample_rate = settings.SENTRY_METRICS_SAMPLE_RATE
-    if not skip_internal and _should_sample():
-        internal.incr(key, instance, tags, amount)
+def incr(key, amount=1, instance=None, tags=None, skip_internal=True,
+         sample_rate=settings.SENTRY_METRICS_SAMPLE_RATE):
+    banned_prefix = key.startswith(metrics_skip_internal_prefixes)
+    if (
+        not skip_internal and
+        _should_sample(sample_rate) and
+        not banned_prefix
+    ):
+        internal.incr(key, instance, tags, amount, sample_rate)
     try:
         backend.incr(key, instance, tags, amount, sample_rate)
+        if not skip_internal and not banned_prefix:
+            backend.incr('internal_metrics.incr', key, None, 1, sample_rate)
     except Exception:
         logger = logging.getLogger('sentry.errors')
         logger.exception('Unable to record backend metric')
 
 
-def timing(key, value, instance=None, tags=None):
-    # TODO(dcramer): implement timing for tsdb
-    # TODO(dcramer): implement sampling for timing
-    sample_rate = settings.SENTRY_METRICS_SAMPLE_RATE
+def timing(key, value, instance=None, tags=None,
+           sample_rate=settings.SENTRY_METRICS_SAMPLE_RATE):
     try:
         backend.timing(key, value, instance, tags, sample_rate)
     except Exception:
@@ -106,7 +113,7 @@ def timing(key, value, instance=None, tags=None):
 
 
 @contextmanager
-def timer(key, instance=None, tags=None):
+def timer(key, instance=None, tags=None, sample_rate=settings.SENTRY_METRICS_SAMPLE_RATE):
     if tags is None:
         tags = {}
 
@@ -119,4 +126,14 @@ def timer(key, instance=None, tags=None):
     else:
         tags['result'] = 'success'
     finally:
-        timing(key, time() - start, instance, tags)
+        timing(key, time() - start, instance, tags, sample_rate)
+
+
+def wraps(key, instance=None, tags=None):
+    def wrapper(f):
+        @functools.wraps(f)
+        def inner(*args, **kwargs):
+            with timer(key, instance=instance, tags=tags):
+                return f(*args, **kwargs)
+        return inner
+    return wrapper
