@@ -18,6 +18,8 @@ export type Team = {
   id: string;
   slug: string;
   isMember: boolean;
+
+  isBookmarked?: boolean;
 };
 
 // This type is incomplete
