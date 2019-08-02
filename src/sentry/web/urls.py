@@ -7,8 +7,6 @@ from django.views.generic import RedirectView
 
 from sentry.web import api
 from sentry.web.frontend import accounts, generic
-from sentry.web.frontend.accept_organization_invite import \
-    AcceptOrganizationInviteView
 from sentry.web.frontend.auth_login import AuthLoginView
 from sentry.web.frontend.twofactor import TwoFactorAuthView, u2f_appid
 from sentry.web.frontend.auth_logout import AuthLogoutView
@@ -355,6 +353,12 @@ urlpatterns += patterns(
 
     url(r'^accept-transfer/$', react_page_view, name='sentry-accept-project-transfer'),
 
+    url(
+        r'^accept/(?P<member_id>\d+)/(?P<token>\w+)/$',
+        GenericReactPageView.as_view(auth_required=False),
+        name='sentry-accept-invite'
+    ),
+
     # User settings use generic_react_page_view, while any view acting on
     # behalf of an organization should use react_page_view
     url(r'^settings/', include([
@@ -496,12 +500,6 @@ urlpatterns += patterns(
         # need to catch settings and force it to react
         url(r'^(?P<organization_slug>[\w_-]+)/settings/', react_page_view),
     ])),
-
-    url(
-        r'^accept/(?P<member_id>\d+)/(?P<token>\w+)/$',
-        AcceptOrganizationInviteView.as_view(),
-        name='sentry-accept-invite'
-    ),
 
     # Settings - Projects
     url(
