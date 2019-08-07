@@ -3,7 +3,7 @@ from __future__ import absolute_import
 from copy import deepcopy
 from rest_framework.exceptions import PermissionDenied
 
-from sentry import eventstore, features
+from sentry import features
 from sentry.api.bases import OrganizationEndpoint, OrganizationEventsError
 from sentry.api.event_search import get_snuba_query_args, InvalidSearchQuery
 from sentry.models.project import Project
@@ -153,34 +153,6 @@ class OrganizationEventsEndpointBase(OrganizationEndpoint):
             raise OrganizationEventsError(
                 'Boolean search operator OR and AND not allowed in this search.')
         return snuba_args
-
-    def next_event_id(self, request, organization, snuba_args, event):
-        """
-        Returns the next event ID if there is a subsequent event matching the
-        conditions provided. Ignores the project_id.
-        """
-        next_event = eventstore.get_next_event_id(
-            event,
-            conditions=snuba_args['conditions'],
-            filter_keys=snuba_args['filter_keys']
-        )
-
-        if next_event:
-            return next_event[1]
-
-    def prev_event_id(self, request, organization, snuba_args, event):
-        """
-        Returns the previous event ID if there is a previous event matching the
-        conditions provided. Ignores the project_id.
-        """
-        prev_event = eventstore.get_prev_event_id(
-            event,
-            conditions=snuba_args['conditions'],
-            filter_keys=snuba_args['filter_keys']
-        )
-
-        if prev_event:
-            return prev_event[1]
 
     def _filter_unspecified_special_fields_in_conditions(self, snuba_args, special_fields):
         conditions = []
