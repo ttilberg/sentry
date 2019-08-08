@@ -218,8 +218,8 @@ export const buildTeamId = id => `team:${id}`;
 /**
  * Removes the organization / project scope prefix on feature names.
  */
-export function descopeFeatureName(feature: string): string {
-  if (typeof feature.match !== 'function') {
+export function descopeFeatureName<T>(feature: T): T | string {
+  if (typeof feature !== 'string') {
     return feature;
   }
 
