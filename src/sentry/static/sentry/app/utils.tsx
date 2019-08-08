@@ -35,7 +35,7 @@ export function valueIsEqual(value?: any, other?: any, deep?: boolean): boolean 
 }
 
 function objectMatchesSubset(obj?: object, other?: object, deep?: boolean): boolean {
-  let k: string | number;
+  let k: string;
 
   if (obj === other) {
     return true;
@@ -225,7 +225,7 @@ export function descopeFeatureName(feature: string): string {
 
   const results = feature.match(/(?:^(?:projects|organizations):)?(.*)/);
 
-  if (results) {
+  if (results && results.length > 0) {
     return results.pop()!;
   }
 
